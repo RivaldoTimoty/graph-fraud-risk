@@ -1,0 +1,60 @@
+@import "tailwindcss";
+
+:root {
+  --nord-bg: #242933;
+  --nord-surface: #2e3440;
+  --nord-surface-alt: #3b4252;
+  --nord-border: #434c5e;
+  --nord-muted: #7b88a1;
+  --nord-text: #e5e9f0;
+  --nord-bright: #eceff4;
+  --nord-fraud: #bf616a;
+  --nord-good: #5e81ac;
+  --nord-green: #a3be8c;
+  --nord-yellow: #ebcb8b;
+}
+
+@theme inline {
+  --color-bg: var(--nord-bg);
+  --color-surface: var(--nord-surface);
+  --color-surface-alt: var(--nord-surface-alt);
+  --color-edge: var(--nord-border);
+  --color-muted: var(--nord-muted);
+  --color-body: var(--nord-text);
+  --color-bright: var(--nord-bright);
+  --color-fraud: var(--nord-fraud);
+  --color-good: var(--nord-good);
+  --color-ok: var(--nord-green);
+  --color-warn: var(--nord-yellow);
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background: var(--nord-bg);
+  color: var(--nord-text);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Tabel angka: rata kanan dan lebar digit seragam supaya mudah dibandingkan. */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+input[type="range"] {
+  accent-color: var(--nord-good);
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--nord-bg);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--nord-border);
+  border-radius: 5px;
+}

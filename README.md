@@ -233,6 +233,31 @@ reports/
 dashboard/        Next.js — model comparison, network explorer, score explorer
 ```
 
+## Dashboard
+
+Next.js 16 + Plotly, static export — tidak butuh server saat runtime.
+
+```bash
+cd dashboard
+npm install
+npm run dev     # http://localhost:3000
+npm run build   # static export ke dashboard/out/
+```
+
+Tiga tab: perbandingan model dengan gain chart, eksplorasi jaringan fraud
+(27 subgraph pra-layout), dan eksplorasi skor dengan slider ambang yang langsung
+menghitung ulang review rate, recall, dan penghematan.
+
+Data dashboard di-precompute ke `dashboard/public/data/*.json` (912 KB) dan
+ter-commit, sehingga dashboard jalan langsung setelah `git clone` tanpa perlu
+menjalankan ulang pipeline. Regenerasi:
+
+```bash
+./venv/Scripts/python -m src.viz.export_dashboard_data
+```
+
+Deploy ke Vercel: connect repo, set root directory ke `dashboard`.
+
 ## Dokumen
 
 - [Catatan keputusan](reports/decisions.md) — setiap keputusan metodologis beserta alasannya
