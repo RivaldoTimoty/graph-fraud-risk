@@ -40,12 +40,19 @@ export function Stat({
   const toneClass =
     tone === "good" ? "text-ok" : tone === "bad" ? "text-fraud" : "text-bright";
   return (
-    <div className="rounded-lg border border-edge bg-surface/40 px-3 py-3">
-      <div className="text-[11px] uppercase tracking-wide text-muted">{label}</div>
-      <div className={`tabular mt-1 text-xl font-semibold sm:text-2xl ${toneClass}`}>
+    // min-w-0 wajib: tanpa itu grid item tidak boleh menyusut di bawah lebar
+    // kontennya, sehingga label panjang mendorong kartu keluar dari grid.
+    <div className="min-w-0 overflow-hidden rounded-lg border border-edge bg-surface/40 px-3 py-3">
+      <div className="truncate text-[11px] uppercase tracking-wide text-muted" title={label}>
+        {label}
+      </div>
+      <div
+        className={`tabular mt-1 truncate text-xl font-semibold sm:text-2xl ${toneClass}`}
+        title={value}
+      >
         {value}
       </div>
-      {hint && <div className="mt-0.5 text-[11px] text-muted">{hint}</div>}
+      {hint && <div className="mt-0.5 truncate text-[11px] text-muted">{hint}</div>}
     </div>
   );
 }

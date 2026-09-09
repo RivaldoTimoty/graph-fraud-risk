@@ -103,7 +103,7 @@ export default function NetworkExplorer() {
           hint="rata-rata populasi 3,5%"
           tone={graph.fraud_rate > 0.5 ? "bad" : "default"}
         />
-        <Stat label="Atribut penghubung" value={graph.anchor_column} />
+        <Stat label="Penghubung" value={graph.anchor_column} hint="atribut yang dibagi" />
       </div>
 
       <Card
