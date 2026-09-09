@@ -240,13 +240,14 @@ dashboard/        Next.js - model comparison, network explorer, score explorer
 
 ## Dashboard
 
-Next.js 16 + Plotly, static export - tidak butuh server saat runtime.
+Next.js 16 + Plotly. Semua halaman prerendered statis saat build.
 
 ```bash
 cd dashboard
 npm install
 npm run dev     # http://localhost:3000
-npm run build   # static export ke dashboard/out/
+npm run build   # produksi
+npm start       # jalankan hasil build
 ```
 
 Tiga tab: perbandingan model dengan gain chart, eksplorasi jaringan fraud
