@@ -1,0 +1,50 @@
+seed: 42
+
+# Model final Fase 5. Satu-satunya model dengan angka test out-of-time yang sah
+# (M3 di ablation Fase 4). spw=5 ditinjau ulang di validation saja — kalau menang,
+# hasilnya dilaporkan sebagai temuan, BUKAN dipakai lalu dievaluasi di test.
+model: lgbm_baseline_full
+
+scorecard:
+  # PDO = points to double the odds. Konvensi credit scoring: setiap penambahan
+  # 20 poin berarti odds non-fraud berlipat dua.
+  pdo: 20
+  # Anchor: skor 600 diberikan pada odds 1:50 (fraud rate ~2%).
+  anchor_score: 600
+  anchor_odds: 50
+  score_min: 300
+  score_max: 850
+  n_bands: 10
+
+business:
+  # Biaya false negative = TransactionAmt transaksi itu sendiri (kerugian aktual
+  # per transaksi), bukan rata-rata — fraud bernilai besar dan kecil punya
+  # konsekuensi berbeda, dan itulah inti argumen bisnisnya.
+  #
+  # Biaya false positive = review manual + friksi pelanggan. ASUMSI, bukan angka
+  # terukur. Analisis sensitivitas menunjukkan bagaimana threshold optimal dan
+  # penghematan berubah terhadap asumsi ini.
+  cost_fp_default: 5.0
+  cost_fp_scenarios: [2.0, 5.0, 10.0, 25.0]
+  n_thresholds: 200
+  # Periode test = 31 hari; dipakai untuk menormalkan penghematan ke per-bulan.
+  days_in_period: 31
+
+stability:
+  n_bins: 10
+  # Ambang industri credit scoring.
+  psi_stable: 0.10
+  psi_warning: 0.25
+  top_features_for_csi: 20
+
+calibration:
+  n_bins: 20
+  # Isotonic di-fit pada validation, diterapkan ke test. Fitting pada test akan
+  # membuat kalibrasi menilai dirinya sendiri.
+  method: isotonic
+
+spw_review:
+  # Peninjauan Fase 2: spw=5 menaikkan AUC +1,28 pp tapi ECE naik 7x.
+  # Pertanyaannya: apakah isotonic memulihkan kalibrasi tanpa mengorbankan ranking?
+  # VALIDATION SAJA — memilih model berdasarkan test akan membatalkan angka test.
+  weights: [1.0, 5.0]

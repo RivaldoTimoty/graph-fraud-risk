@@ -770,3 +770,173 @@ Analisis graph disimpan sebagai temuan riset. Dua hal yang dibawa ke laporan akh
 Tidak ada model atau fitur yang diubah setelah test set dibuka. Angka test di atas
 final. Diagnostik dekomposisi di bagian 2 dijalankan pada validation saja, setelah
 test dibuka, dan tidak dipakai untuk mengubah model mana pun.
+
+---
+
+## Fase 5 — Evaluasi Risk-Style & Framing Bisnis
+
+Model: M3 (`lgbm_baseline_full`, backend XGBoost, spw=1,0). Dilatih ulang dengan
+konfigurasi identik dan **mereproduksi AUC test 0,9007 persis** — konfirmasi bahwa
+pipeline deterministik dan angka Fase 4 dapat direplikasi.
+
+### D15. Scorecard 300-850, PDO 20
+
+Anchor: skor 600 pada odds non-fraud 1:50. Faktor skala = 20/ln(2) = 28,85 poin
+per satuan log-odds. Diverifikasi lewat test: odds berlipat dua menghasilkan
+selisih tepat 20,00 poin.
+
+Pemisahan pada test out-of-time: **skor rata-rata fraud 514 versus non-fraud 626**
+— selisih 112 poin, setara lebih dari 5 kali PDO.
+
+Tabel band (test, 89.326 transaksi):
+
+| Band | Rentang skor | Populasi | Fraud rate | Cum. recall |
+|---|---|---|---|---|
+| 0 (terburuk) | 300-569 | 10% | **24,19%** | **69,40%** |
+| 1 | 569-593 | 10% | 4,30% | 81,73% |
+| 2 | 593-607 | 10% | 2,17% | 87,96% |
+| 3 | 607-618 | 10% | 1,24% | 91,52% |
+| 4 | 618-628 | 10% | 1,05% | 94,54% |
+| 5-8 | 628-672 | 40% | 0,74% -> 0,17% | 99,49% |
+| 9 (terbaik) | 672-762 | 10% | 0,18% | 100% |
+
+Band terburuk (10% populasi) menampung 69,4% seluruh fraud dengan fraud rate 24,2%
+— tujuh kali fraud rate keseluruhan. Band terbaik hanya 0,18%, yaitu 134 kali lebih
+aman. Ini bentuk yang langsung bisa dipakai tim risk untuk menetapkan kebijakan
+per-band.
+
+### D16. Cost-based threshold — alat, bukan satu angka
+
+Asumsi yang dinyatakan:
+- **Biaya false negative** = `TransactionAmt` transaksi itu sendiri (kerugian
+  aktual per transaksi, bukan rata-rata).
+- **Biaya false positive** = konstanta per transaksi (review manual + friksi
+  pelanggan). Ini ASUMSI, bukan angka terukur.
+
+Biaya tanpa model sama sekali (seluruh fraud lolos): **$477.356** pada periode test
+31 hari.
+
+| Biaya FP | Threshold optimal | Review rate | Recall | Total biaya | Penghematan | Penghematan/bulan | Reduksi biaya |
+|---|---|---|---|---|---|---|---|
+| $2 | 0,0121 | **35,7%** | 90,2% | $105.054 | $372.302 | $360.292 | **78,0%** |
+| $5 | 0,0270 | 18,6% | 81,0% | $166.549 | $310.806 | $300.780 | 65,1% |
+| $10 | 0,0447 | 12,1% | 73,7% | $213.513 | $263.843 | $255.332 | 55,3% |
+| $25 | 0,0822 | **7,0%** | 63,1% | $299.375 | $177.981 | $172.239 | 37,3% |
+
+**Ini deliverable yang sebenarnya.** Threshold optimal bergeser lima kali lipat
+(35,7% -> 7,0%) hanya karena asumsi biaya FP berubah dari $2 ke $25. Menyodorkan
+satu angka "threshold optimal 0,027" akan menyembunyikan bahwa angka itu sepenuhnya
+bergantung pada asumsi yang tidak pernah benar-benar diketahui.
+
+Yang bisa dikatakan dengan yakin ke stakeholder: **model ini menghemat 37-78% biaya
+fraud tergantung berapa mahal review manual di organisasi Anda.** Bahkan pada
+asumsi paling pesimis ($25 per review), penghematannya $172 ribu per bulan.
+
+Yang TIDAK dimodelkan, dan harus disebut: biaya reputasi jangka panjang, churn
+pelanggan yang salah ditolak, dan biaya tetap operasional tim review.
+
+### D17. PSI skor sangat stabil, tapi CSI menemukan masalah lain
+
+**PSI skor train -> test = 0,0032** — jauh di bawah ambang 0,10, kategori "stabil".
+Distribusi skor model praktis tidak bergeser antar periode.
+
+Tapi CSI per fitur menemukan sesuatu yang PSI skor tidak tunjukkan:
+
+| Fitur | CSI | Verdict | % missing train | % missing test |
+|---|---|---|---|---|
+| `le_M8` | 0,3360 | bermasalah | 67,1% | **38,6%** |
+| `le_M9` | 0,3360 | bermasalah | 67,1% | 38,6% |
+| `le_M7` | 0,3360 | bermasalah | 67,1% | 38,6% |
+| `le_M3` | 0,2833 | bermasalah | 54,0% | 28,1% |
+| sisanya | < 0,023 | stabil | — | — |
+
+Nilai CSI M7/M8/M9 identik persis karena ketiganya berbagi pola missing yang sama
+(M8 dan M9 identik; M7 hampir identik). **Pergeserannya adalah pergeseran
+MISSINGNESS, bukan pergeseran nilai** — Vesta mulai mengisi kolom M di paruh kedua
+periode, dari 67% kosong menjadi 39% kosong.
+
+Implikasi: keempat fitur ini berubah makna antar periode. Nilai "-1" (missing)
+yang di training berarti "mayoritas kasus" berubah menjadi "minoritas kasus" di
+test. Model tetap berjalan baik (PSI skor 0,0032) karena bobotnya tersebar ke 447
+fitur, tapi dalam produksi keempat fitur ini layak dipantau atau di-drop.
+
+**Pelajaran metodologis:** PSI skor yang sehat tidak menjamin fitur-fiturnya sehat.
+Keduanya harus dipantau. Ini melengkapi temuan Fase 4 bahwa PSI juga tidak
+menangkap runtuhnya kekuatan bukti pada fitur berbasis entitas.
+
+### D18. Model sudah terkalibrasi; isotonic justru memperburuk
+
+Hasil pada test out-of-time:
+
+| | ECE | Brier | Mean predicted | Actual rate | Bias |
+|---|---|---|---|---|---|
+| **Sebelum (raw)** | **0,00348** | **0,02268** | 0,03450 | 0,03486 | **-0,00037** |
+| Isotonic | 0,00363 | 0,02289 | 0,03839 | 0,03486 | +0,00353 |
+
+AUC 0,9007 -> 0,9000 (isotonic monoton, ranking praktis tak berubah).
+
+**Isotonic memperburuk ECE.** Penyebabnya bukan bug melainkan drift:
+
+- Model spw=1 sudah nyaris terkalibrasi sempurna di test — bias hanya -0,00037,
+  yaitu 1% dari fraud rate.
+- Isotonic di-fit pada **validation** yang fraud rate-nya 0,03426, lalu diterapkan
+  ke **test** yang fraud rate-nya 0,03486.
+- Kalibrator mewarisi level validation, menaikkan mean prediksi ke 0,03839 dan
+  membuat bias menjadi +0,00353 — sepuluh kali lebih buruk.
+
+Jadi kalibrator MENGIMPOR drift val->test. Ini konsekuensi langsung dari drift
+fraud rate yang terdokumentasi di T1 (rentang mingguan 2,07%-5,07%).
+
+**Keputusan: tidak memakai kalibrasi isotonic pada model final.** Model raw sudah
+lebih baik. Kalibrasi baru berguna kalau model memang tidak terkalibrasi — dan
+`scale_pos_weight=1,0` yang dipilih di Fase 2 justru dipilih karena alasan itu.
+Keputusan D7 terbukti benar dua fase kemudian.
+
+### D19. Peninjauan `scale_pos_weight` — spw=5 + isotonic menang di validation
+
+Dievaluasi pada paruh kedua validation; isotonic di-fit pada paruh pertama supaya
+tidak menilai dirinya sendiri.
+
+| spw | Kalibrasi | AUC | KS | PR-AUC | ECE | Brier | Bias |
+|---|---|---|---|---|---|---|---|
+| 1,0 | raw | 0,8943 | 0,6383 | 0,4561 | 0,0052 | 0,0232 | -0,0026 |
+| 1,0 | isotonic | 0,8932 | 0,6300 | 0,4312 | 0,0057 | 0,0236 | +0,0022 |
+| 5,0 | raw | **0,9077** | **0,6651** | **0,4868** | 0,0371 | 0,0262 | +0,0371 |
+| **5,0** | **isotonic** | **0,9071** | **0,6635** | 0,4629 | **0,0058** | **0,0227** | +0,0020 |
+
+**Jawaban atas pertanyaan Fase 2: ya, isotonic memulihkan kalibrasi spw=5 hampir
+sepenuhnya.** ECE turun dari 0,0371 ke 0,0058 (setara spw=1), Brier bahkan menjadi
+yang terbaik (0,0227), sementara AUC hanya turun 0,0006. Hasilnya: AUC +1,28 pp dan
+KS +2,52 pp di atas spw=1, dengan kalibrasi yang setara.
+
+**Tetapi spw=5 TIDAK dipakai sebagai model final.** Alasannya metodologis, bukan
+teknis:
+
+1. Angka di atas adalah **validation**. Memilih spw=5 berdasarkan validation lalu
+   mengevaluasinya di test akan menjadi pembukaan test set kedua untuk model yang
+   dipilih berdasarkan hasil — persis yang dilarang.
+2. Satu-satunya model dengan angka out-of-time yang sah adalah spw=1 (M3).
+3. Ironi yang perlu dicatat: keunggulan spw=5 justru pada kalibrasi setelah
+   isotonic — padahal D18 menunjukkan isotonic mengimpor drift val->test. Belum
+   tentu keunggulan itu bertahan di OOT.
+
+**Status: temuan terverifikasi di validation, belum terukur out-of-time.** Sama
+seperti fitur graph Level 1-2 (+2,30 pp AUC). Kedua kandidat ini adalah rekomendasi
+utama untuk pekerjaan lanjutan dengan periode data baru.
+
+### D20. Ringkasan model final
+
+| Aspek | Nilai |
+|---|---|
+| Model | M3 — XGBoost, 447 fitur, tanpa graph, spw=1,0 |
+| AUC test OOT | 0,9007 |
+| KS test OOT | 0,6471 |
+| PR-AUC test OOT | 0,5196 |
+| recall@1% / 5% / 10% | 25,3% / 56,3% / 69,4% |
+| PSI skor train->test | 0,0032 (stabil) |
+| ECE | 0,00348 (terkalibrasi, tanpa post-processing) |
+| Skor fraud vs non-fraud | 514 vs 626 |
+| Penghematan biaya | 37-78% tergantung asumsi biaya FP |
+
+Target MASTER_PLAN Fase 2 (AUC 0,90-0,93, KS 0,60-0,70) tercapai pada test
+out-of-time, bukan hanya validation.
