@@ -14,6 +14,65 @@ ambang skor dengan trade-off biaya. [Cara menjalankan](#dashboard).*
 
 ---
 
+## Latar belakang
+
+Fraud kartu pada e-commerce adalah masalah dengan kerugian langsung yang mudah
+dihitung. Pada data ini, 3,50% transaksi adalah penipuan, dan nilai fraud yang
+lolos tanpa penyaringan mencapai $477.356 dalam satu bulan pengujian. Rasio 3,5%
+itu sendiri yang membuat masalahnya sulit: model yang menebak "semua sah" langsung
+benar 96,5% dari waktu, sehingga akurasi tidak berarti apa-apa dan seluruh
+evaluasi harus bertumpu pada metrik peringkat. Yang lebih menentukan, transaksi
+fraud tidak muncul sendiri-sendiri. Pelaku memakai ulang kartu, perangkat, dan
+alamat email lintas percobaan, sehingga asumsi bahwa setiap baris data independen
+justru salah tepat pada kasus yang paling ingin ditangkap.
+
+Dari situ pendekatan graph terlihat masuk akal secara teori. Kalau dua transaksi
+berbagi kartu atau perangkat yang sama, risikonya berkorelasi, dan korelasi itu
+tidak terwakili oleh fitur per-baris mana pun. Membangun graph transaksi-atribut
+memungkinkan model melihat struktur tersebut secara eksplisit: seberapa besar
+klaster tempat sebuah transaksi berada, seberapa rapat lingkungannya, dan berapa
+banyak tetangganya yang sudah diketahui sebagai penipuan. Pada data ini struktur
+itu memang nyata: 96,6% klien multi-transaksi punya label homogen, dan sebagian
+klaster berisi hampir seluruhnya fraud.
+
+Masalahnya, hampir semua project IEEE-CIS yang melaporkan lift besar dari graph
+features memakai random split. Pembagian acak menempatkan transaksi dari klien
+yang sama di kedua sisi split, sehingga statistik graph yang dihitung dari data
+latih sudah mengandung informasi tentang baris uji, bukan karena kodenya salah
+tetapi karena strukturnya memang saling terhubung lintas waktu. Lift yang
+dilaporkan dengan cara itu kemungkinan besar melebih-lebihkan performa nyata, dan
+kesalahannya tidak akan terdeteksi oleh pengecekan leakage biasa karena tidak ada
+label yang benar-benar bocor.
+
+**Pertanyaan riset project ini: berapa nilai tambah nyata graph features di atas
+baseline tabular yang kuat, ketika validasinya benar-benar out-of-time?** Untuk
+menjawabnya, seluruh pembagian data dipotong menurut waktu, fitur berbasis label
+dihitung dengan leave-one-out yang diverifikasi, dan test set dibuka tepat satu
+kali di akhir.
+
+---
+
+## Hipotesis awal
+
+Empat hipotesis dibawa masuk sebelum melihat hasil, dan statusnya dicatat apa
+adanya.
+
+| Hipotesis | Hasil |
+|---|---|
+| **H1.** Graph features memberi lift di atas baseline tabular | **Sebagian terbantah.** Fitur struktural memberi +2,30 pp AUC di validation, tetapi fitur berbasis label menurunkan AUC test 1,91 pp dan menyeret keseluruhan turun. |
+| **H2.** C1–C14 Vesta "sudah semi-graph", sehingga lift graph akan kecil | **Terbantah, dengan cara yang lebih menarik.** Korelasi C13 dengan degree kartu hanya -0,01, tetapi dengan degree klien 0,46. C bukan graph secara umum, melainkan counting di level klien. |
+| **H3.** Fitur berbasis label adalah yang paling powerful | **Terbantah di out-of-time.** Empat fitur berbasis label menempati peringkat 1 sampai 4 di SHAP dengan kontribusi 2 sampai 2,5 kali fitur non-graph terbaik, justru sambil merusak generalisasi. |
+| **H4.** PSI cukup untuk mendeteksi degradasi fitur | **Terbantah.** PSI skor 0,0032 terbaca sangat sehat sementara fitur berbasis label sudah lumpuh: nilainya bergeser hanya -2,8% tetapi kekuatan buktinya runtuh 52%. |
+| **H5.** `scale_pos_weight` tidak memengaruhi metrik peringkat | **Terbantah.** Reweighting mengubah fungsi loss, bukan sekadar menskalakan skor, sehingga `spw=5` menaikkan AUC 1,28 pp dan KS 4,13 pp. |
+
+Empat dari lima hipotesis terbantah, dan itulah yang membuat project ini bernilai:
+setiap bantahan datang dari validasi out-of-time yang menangkap sesuatu yang tidak
+terlihat pada validation, sementara implementasinya sendiri lolos setiap
+pengecekan leakage yang biasa dilakukan. Hasil positif yang mulus akan jauh lebih
+mudah diperoleh dengan random split, dan jauh lebih sulit dipercaya.
+
+---
+
 ## Temuan utama
 
 | | AUC | KS | PR-AUC | recall@1% | recall@10% |
