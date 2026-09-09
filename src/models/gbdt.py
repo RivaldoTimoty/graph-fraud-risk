@@ -31,15 +31,25 @@ BLOCK_PATTERNS: dict[str, tuple[str, ...]] = {
     "C": tuple(f"C{i}" for i in range(1, 15)),
     "V": ("V",),
     "id": ("id_",),
+    # Fase 3. Prefiks ditetapkan saat fitur dibangun supaya feature set selektif
+    # untuk ablation bisa disusun tanpa mendaftar kolom satu per satu.
+    "graph": ("graph_",),
+    "uid": ("uid_",),
 }
 
+# Kolom yang dikecualikan dari blok graph meski berprefiks graph_/uid_.
+# Diisi saat 2-hop digugurkan (lihat keputusan D-2hop di decisions.md).
+EXCLUDED_FEATURES: tuple[str, ...] = ()
 
-def select_features(columns: list[str], blocks: list[str]) -> list[str]:
+
+def select_features(
+    columns: list[str], blocks: list[str], excluded: tuple[str, ...] = EXCLUDED_FEATURES
+) -> list[str]:
     """Pilih kolom sesuai daftar blok. Kolom meta selalu dikecualikan."""
     exact = {"base", "derived", "D", "C"}
     selected = []
     for col in columns:
-        if col in META_COLS:
+        if col in META_COLS or col in excluded:
             continue
         for block in blocks:
             patterns = BLOCK_PATTERNS[block]
@@ -50,9 +60,21 @@ def select_features(columns: list[str], blocks: list[str]) -> list[str]:
     return selected
 
 
-def load_matrix(features_config: str = "features") -> pd.DataFrame:
-    path = resolve_path(load_config(features_config)["paths"]["baseline_matrix"])
-    return pd.read_parquet(path)
+def load_matrix(features_config: str = "features", with_graph: bool = False) -> pd.DataFrame:
+    """Baca feature matrix baseline, opsional digabung fitur graph Fase 3.
+
+    Penggabungan memakai merge pada TransactionID, bukan concat, supaya urutan
+    baris terjamin sama meski parquet ditulis oleh proses berbeda.
+    """
+    matrix = pd.read_parquet(resolve_path(load_config(features_config)["paths"]["baseline_matrix"]))
+    if not with_graph:
+        return matrix
+
+    graph_cfg = load_config("graph")
+    for path_key in (graph_cfg["paths"]["features"], graph_cfg["level3"]["features_path"]):
+        extra = pd.read_parquet(resolve_path(path_key))
+        matrix = matrix.merge(extra, on="TransactionID", how="left", validate="one_to_one")
+    return matrix
 
 
 def _train_lightgbm(X_tr, y_tr, X_va, y_va, cfg):

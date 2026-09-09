@@ -441,3 +441,332 @@ sehingga graph tidak berguna", melainkan lebih menarik: *Vesta meng-encode sinya
 counting di level klien (C13, C9) dan sesuatu yang menyerupai neighbor fraud rate
 (C4, C7, C8, C10), tapi korelasi 0,36-0,49 menunjukkan keduanya tidak sama.*
 Ablation Fase 4 akan mengukur berapa banyak sisa informasi yang benar-benar baru.
+
+---
+
+## Fase 4a — Ablation Study: Graph Features Menurunkan Performa
+
+**Ringkasan: fitur graph BERBASIS LABEL (Level 3) memperburuk performa
+out-of-time secara serius, sementara fitur graph STRUKTURAL (Level 1-2) justru
+memberi lift substansial di validation (+2,30 pp AUC). Karena keduanya diuji
+bersama di test, model bergraf terbaik yang terukur out-of-time tetap kalah dari
+baseline murni.**
+
+Dari empat model yang dievaluasi di test, yang terbaik adalah M3 — baseline tanpa
+graph. Tetapi dekomposisi di bagian 2 menunjukkan itu bukan karena graph tidak
+berguna, melainkan karena Level 3 menenggelamkan kontribusi Level 1-2.
+
+Hasil negatif ini dilaporkan apa adanya sesuai aturan proyek, termasuk fakta bahwa
+kombinasi terbaik (B2 + Level 1-2 saja) tidak sempat terverifikasi di test.
+
+### 1. Tabel hasil — test set out-of-time (hari 151-181)
+
+Test set dibuka SEKALI untuk keempat model, setelah konfigurasi dikunci.
+Audit trail: `artifacts/experiments.csv` punya tepat 4 baris dengan `test_auc`
+terisi dari total 9 baris eksperimen.
+
+| Metrik | M1 (B1) | M2 (B1+graph) | M3 (B2) | M4 (B2+graph) |
+|---|---|---|---|---|
+| AUC | 0,8922 | 0,8099 | **0,9007** | 0,8816 |
+| KS | 0,6281 | 0,4177 | **0,6471** | 0,5942 |
+| PR-AUC | 0,4806 | 0,2942 | **0,5196** | 0,3901 |
+| recall@1% | 0,2408 | 0,2039 | **0,2531** | 0,2200 |
+| recall@5% | 0,5337 | 0,4252 | **0,5633** | 0,4730 |
+| recall@10% | 0,6731 | 0,4974 | **0,6940** | 0,6008 |
+
+Lift dan tumpang-tindih:
+
+| Metrik | Lift_B1 (M2-M1) | Lift_B2 (M4-M3) | Nilai C (M3-M1) | **Tumpang-tindih C<->graph** |
+|---|---|---|---|---|
+| AUC | -0,0823 | -0,0191 | +0,0085 | **-0,0633** |
+| KS | -0,2103 | -0,0529 | +0,0191 | **-0,1574** |
+| PR-AUC | -0,1864 | -0,1295 | +0,0390 | **-0,0569** |
+| recall@1% | -0,0369 | -0,0331 | +0,0122 | -0,0039 |
+| recall@5% | -0,1085 | -0,0902 | +0,0295 | -0,0183 |
+| recall@10% | -0,1757 | -0,0931 | +0,0209 | -0,0825 |
+
+**Cara membaca tumpang-tindih.** Angka ini dirancang untuk mengukur berapa sinyal
+graph yang sudah ada di C-features. Karena kedua lift negatif, tandanya berbalik
+makna: tumpang-tindih -0,0633 AUC berarti **kerusakan yang ditimbulkan graph jauh
+lebih kecil ketika C-features hadir** (-1,91 pp) dibanding ketika tidak ada
+(-8,23 pp). C-features berfungsi sebagai peredam: model yang sudah punya sinyal
+entity-level yang stabil lebih sedikit bergantung pada fitur graph yang rapuh.
+
+Catatan: "Nilai C" di test (+0,85 pp AUC) lebih kecil daripada di validation
+(+1,49 pp, Fase 2) — konsisten dengan drift yang sudah terdokumentasi.
+
+### 2. Dekomposisi: Level 1-2 vs Level 3
+
+**Temuan yang mengubah kesimpulan.** Diagnostik terpisah (validation, konfigurasi
+identik) memisahkan kontribusi kedua level:
+
+| Feature set | n fitur | VAL AUC | VAL KS | vs B2 |
+|---|---|---|---|---|
+| B2 (baseline) | 447 | 0,9031 | 0,6435 | — |
+| **B2 + Level 1-2 saja** | 473 | **0,9261** | **0,7096** | **+2,30 pp / +6,61 pp** |
+| B2 + Level 3 saja | 453 | 0,9067 | 0,6557 | +0,36 pp / +1,22 pp |
+| B2 + semua (M4) | 479 | 0,9081 | 0,6630 | +0,50 pp / +1,95 pp |
+
+**Level 1-2 sendirian adalah feature set terbaik di validation** — lebih baik
+daripada menambahkan seluruh fitur graph. Menambahkan Level 3 ke B2+L12 justru
+MENURUNKAN AUC dari 0,9261 ke 0,9081 (-1,80 pp).
+
+Jadi pernyataan "graph features merusak" TIDAK tepat. Yang tepat: **fitur graph
+struktural (Level 1-2) memberi lift substansial, sementara fitur berbasis label
+(Level 3) merusak dan menyeret Level 1-2 turun bersamanya.**
+
+**Keterbatasan yang harus dinyatakan.** Angka B2+L12 di atas adalah VALIDATION.
+Test set sudah dibuka untuk empat model terkunci dan tidak boleh dibuka lagi untuk
+kombinasi baru — itu akan mengubah test menjadi alat seleksi. Karena itu:
+
+- Lift Level 1-2 sebesar +2,30 pp AUC **belum terverifikasi out-of-time**.
+- Diagnostik drift (bagian 3b) menunjukkan fitur Level 1-2 sangat stabil kecuali
+  `uid_size` (+250%), sehingga lift ini kemungkinan bertahan — tapi itu dugaan,
+  bukan hasil terukur.
+- Verifikasi yang benar memerlukan test set periode baru, atau dinyatakan sebagai
+  hipotesis untuk pekerjaan lanjutan.
+
+Ini konsekuensi sah dari disiplin membuka test sekali. Mencatatnya sebagai
+"belum terukur" lebih jujur daripada membuka test lagi demi angka yang lebih baik.
+
+#### Bukti pendukung dari SHAP
+
+SHAP pada M4 (validation, 50K subsample) menunjukkan model mengandalkan graph
+secara ekstrem:
+
+| Kelompok | n fitur | total mean\|SHAP\| | % dari total |
+|---|---|---|---|
+| `graph_*` | 23 | 0,10509 | **46,2%** |
+| `uid_*` | 9 | 0,04882 | **21,5%** |
+| V (Vesta) | 339 | 0,04230 | 18,6% |
+| C (Vesta counting) | 14 | 0,02846 | 12,5% |
+| D (timedelta) | 15 | 0,00293 | 1,3% |
+
+Empat peringkat teratas seluruhnya fitur Level 3:
+
+| Rank | Fitur | mean\|SHAP\| |
+|---|---|---|
+| 1 | `graph_nb_fraud_rate_1hop` | 0,03606 |
+| 2 | `graph_nb_fraud_rate_2hop` | 0,03553 |
+| 3 | `uid_fraud_rate` | 0,03441 |
+| 4 | `graph_community_fraud_rate` | 0,02870 |
+| 5 | V244 (fitur non-graph pertama) | 0,01467 |
+
+Fitur graph/uid di top 20: **7 dari 20**.
+
+**Keputusan 2-hop: DIPERTAHANKAN.** Kriteria gugur ditetapkan sebelum angka
+dilihat (mean|SHAP| < 20% dari 1-hop, atau rank > 50). Hasilnya rank 2 dengan
+98,5% dari 1-hop — jauh melewati ambang. Menggugurkan 2-hop bukan solusi atas
+masalah ini, karena 1-hop pun sama bermasalahnya.
+
+**Inti dekomposisinya:** jarak SHAP antara fitur Level 3 (0,029-0,036) dan fitur
+non-graph terbaik (V244, 0,015) adalah 2-2,5 kali. Model tidak sekadar memakai
+fitur Level 3 — ia menggantungkan sebagian besar keputusannya pada empat fitur
+tersebut, lalu performanya runtuh di periode berikutnya.
+
+### 3. Root cause analysis
+
+Ada DUA mekanisme berbeda, keduanya lolos dari test anti-leakage karena keduanya
+bukan leakage label.
+
+#### 3a. Coverage collapse — bukti melemah, model tidak tahu
+
+`uid_labeled_count` = jumlah tetangga UID berlabel setelah leave-one-out:
+
+| Split | mean | median | % bernilai nol |
+|---|---|---|---|
+| train | 6,00 | 2 | 33,2% |
+| val | 3,75 | 0 | 57,7% |
+| test | **2,87** | **0** | **67,3%** |
+
+Turun 52% dari train ke test. Konsekuensinya berlapis:
+
+- Di training, model belajar bahwa `uid_fraud_rate` layak dipercaya karena
+  rata-rata didukung 6 tetangga berlabel.
+- Di test, dua pertiga baris tidak punya tetangga berlabel sama sekali, sehingga
+  `uid_fraud_rate` = prior konstan 0,03512 — **tidak membawa informasi apa pun**.
+- Model tetap memberi bobot besar pada fitur itu, karena selama training fitur
+  tersebut memang sangat prediktif.
+
+Yang penting: distribusi NILAI rate-nya stabil (drift hanya -2,8%). Yang runtuh
+adalah kekuatan buktinya, bukan nilainya. Inilah sebabnya pengecekan drift biasa
+(membandingkan mean/PSI fitur) TIDAK akan menangkap masalah ini.
+
+Bukti bahwa fiturnya sendiri tidak bocor: pada baris yang benar-benar punya
+tetangga UID berlabel, AUC test 0,9751 versus train 0,9725 (T6) — sedikit lebih
+BAIK di test. Fitur ini valid; yang gagal adalah ketersediaannya.
+
+#### 3b. `uid_size` dihitung atas seluruh periode
+
+Ini kesalahan desain yang saya temukan saat investigasi, bukan saat implementasi.
+
+`uid_size` (Level 1-2, dianggap "struktural dan aman") diagregasi atas SELURUH
+data. Akibatnya transaksi test mewarisi ukuran klien yang sebagian besar terbentuk
+SETELAH periode training:
+
+| Perhitungan | uid_size rata-rata di test |
+|---|---|
+| Seluruh periode (yang dipakai) | **29,79** |
+| Hanya periode training | 2,87 |
+
+Drift +250,8% dari train (8,48) ke test (29,79). Contoh paling ekstrem: UID 158745
+punya 1.414 transaksi, **1.393 di antaranya di test dan 0 di train** — entitas yang
+praktis tidak eksis saat model dilatih, tapi muncul sebagai klien raksasa di test.
+
+Ini bukan leakage label (tidak ada `isFraud` yang tersentuh), dan CLAUDE.md memang
+mengizinkan graph dibangun dari seluruh data. Tapi untuk fitur AGREGASI, "struktur
+dari seluruh data" ternyata tetap menciptakan pergeseran distribusi yang parah.
+Aturan yang benar seharusnya: **statistik agregasi apa pun — termasuk yang tidak
+menyentuh label — harus dihitung dari periode training saja.**
+
+Fitur Level 1-2 lain yang murni struktural justru sangat stabil:
+
+| Fitur | train | test | drift |
+|---|---|---|---|
+| `graph_deg_card1` | 2511,5 | 2572,9 | +2,4% |
+| `graph_two_hop_count` | 1707,7 | 1841,1 | +7,8% |
+| `graph_component_size` | 421400 | 420077 | -0,3% |
+| `graph_pagerank` | — | — | +0,6% |
+| **`uid_size`** | **8,48** | **29,79** | **+250,8%** |
+
+Jadi masalahnya bukan "fitur graph" secara umum, melainkan spesifik pada fitur
+yang bergantung pada agregasi lintas waktu.
+
+#### 3c. Kenapa model over-relies pada fitur yang justru degradasi
+
+Gradient boosting memilih split yang paling menurunkan loss DI DATA TRAINING.
+Fitur Level 3 di periode training punya AUC univariat 0,81-0,90 — jauh mengalahkan
+fitur terbaik lainnya. Model rasional memberinya bobot besar.
+
+Early stopping tidak menyelamatkan, karena validation (hari 126-150) hanya
+mengalami degradasi separuh jalan: `uid_labeled_count` di val masih 3,75 versus
+2,87 di test. Model berhenti pada titik yang optimal untuk kondisi val, lalu
+menghadapi kondisi yang lebih buruk lagi di test.
+
+Ini pola yang secara struktural sama dengan overfitting, tapi mekanismenya
+berbeda: bukan menghafal noise, melainkan **mengandalkan fitur yang kualitasnya
+meluruh seiring waktu**.
+
+### 4. Implikasi metodologis — apa yang terjadi kalau split-nya random
+
+Prediksi eksplisit, dicatat sebagai klaim yang bisa diuji siapa pun:
+
+Dengan random split (atau StratifiedKFold biasa), lift fitur Level 3 akan
+**positif dan besar** — perkiraan +3 sampai +8 pp AUC, dengan Level 3 mendominasi
+feature importance persis seperti yang terlihat di SHAP. Dengan temporal split,
+lift yang sama menjadi negatif.
+
+(Level 1-2 tidak termasuk dalam prediksi ini: kontribusinya positif di validation
+temporal, jadi tidak bergantung pada jenis split.)
+
+Alasannya langsung mengikuti root cause di atas:
+
+1. **Coverage tidak akan runtuh.** Dengan pembagian acak, transaksi dari satu UID
+   tersebar merata antara train dan test, sehingga `uid_labeled_count` di test
+   akan setara dengan di train (~6, bukan 2,87). Fitur Level 3 tetap informatif.
+2. **`uid_size` tidak akan bergeser.** Agregasi seluruh periode menjadi tidak
+   bermasalah ketika train dan test berasal dari periode yang sama.
+3. **Leave-one-out tetap lolos semua test anti-leakage.** Tidak ada label val/test
+   yang dipakai. Secara teknis benar, tapi hasilnya tetap menyesatkan.
+
+Inilah bagian yang paling layak ditulis: **implementasi Level 3 di project ini
+lolos setiap pengecekan leakage yang biasa dilakukan** — label_mask wajib,
+leave-one-out terverifikasi terhadap perhitungan dense, membalik seluruh label
+val+test pada 590K baris menghasilkan output identik bit-per-bit. Semua benar.
+Yang membuat hasilnya jujur bukan test-test itu, melainkan **temporal split**.
+
+Sebagian besar repo fraud detection yang melaporkan "graph features memberi lift
+besar" kemungkinan berada dalam kondisi ini: kodenya benar, validasinya yang salah.
+
+### 5. Rekomendasi produksi
+
+Kalau sistem ini di-deploy, berikut klasifikasi fiturnya.
+
+**Aman dipakai — struktural, drift < 10%:**
+
+| Fitur | Drift | Catatan |
+|---|---|---|
+| `graph_deg_*` | +2,4% | Degree atribut, stabil |
+| `graph_two_hop_count` | +7,8% | Ukuran lingkungan |
+| `graph_component_size` | -0,3% | Sangat stabil |
+| `graph_pagerank` | +0,6% | Sangat stabil |
+| `graph_attr_entropy`, `graph_max_kcore` | — | Murni struktural |
+
+Fitur-fitur ini boleh dipakai tanpa perlakuan khusus, dan diagnostik dekomposisi
+menunjukkan mereka MEMBERI lift (+2,30 pp AUC di validation). Limitasi yang harus
+disertakan: angka itu belum terverifikasi out-of-time karena test set sudah
+dikunci. Rekomendasi konkret untuk deployment: latih ulang dengan feature set
+B2 + Level 1-2, lalu validasi pada periode baru sebelum produksi.
+
+**Butuh monitoring ketat — jangan dipakai tanpa pengaman:**
+
+| Fitur | Risiko | Pengaman wajib |
+|---|---|---|
+| `uid_fraud_rate` | Coverage runtuh 52% | Monitor `uid_labeled_count`, bukan hanya nilai rate |
+| `graph_nb_fraud_rate_1hop` / `2hop` | Idem | Idem, plus alert bila % baris di prior naik |
+| `graph_community_fraud_rate` | Komunitas berubah antar periode | Re-run Louvain tiap retrain |
+| `uid_size` | **Drift +250%** | HARUS dihitung ulang dari jendela training saja |
+
+**Aturan operasional yang dihasilkan analisis ini:**
+
+1. Monitor **kekuatan bukti**, bukan hanya nilai fitur. PSI pada `uid_fraud_rate`
+   akan terlihat sehat (drift -2,8%) sementara fitur itu sudah lumpuh. Yang harus
+   dipantau adalah `*_labeled_count` dan persentase baris yang jatuh ke prior.
+2. Semua agregasi entitas dihitung dari jendela training bergerak, tidak pernah
+   dari seluruh data yang tersedia.
+3. Retrain lebih sering daripada model tabular biasa, karena fitur berbasis entitas
+   meluruh lebih cepat.
+
+### 6. Framing untuk artikel
+
+**Ini bukan kegagalan graph features. Ini demonstrasi bahwa temporal validation
+memisahkan fitur graph yang benar-benar berguna dari yang hanya tampak berguna —
+pemisahan yang tidak bisa dilakukan oleh pengecekan leakage mana pun.**
+
+Alur artikel yang paling kuat:
+
+1. **Setup**: pertanyaan yang wajar — berapa nilai tambah graph features di atas
+   baseline tabular yang kuat?
+2. **Implementasi yang benar**: bipartite sparse tanpa materialisasi adjacency
+   89,5 miliar nnz, leave-one-out terverifikasi terhadap perhitungan dense,
+   label_mask wajib, membalik seluruh label val+test menghasilkan output identik.
+3. **Twist**: SHAP menunjukkan model mencintai fitur berbasis label — 68% total
+   kontribusi, empat peringkat teratas. Semua tanda menunjukkan keberhasilan besar.
+4. **Kenyataan**: di test out-of-time, AUC turun 1,91 pp (dengan C) dan 8,23 pp
+   (tanpa C). Model terbaik dari empat yang diuji adalah yang tidak memakai graph.
+5. **Pembalikan kedua**: dekomposisi menunjukkan fitur graph STRUKTURAL sebenarnya
+   memberi +2,30 pp AUC. Yang merusak hanya fitur berbasis label — dan ia menyeret
+   yang baik turun bersamanya.
+6. **Diagnosis**: dua mekanisme — coverage collapse (`uid_labeled_count` -52%) dan
+   agregasi lintas periode (`uid_size` +250%). Keduanya bukan leakage label, dan
+   keduanya tak terlihat oleh drift check standar yang hanya memantau nilai fitur.
+7. **Pelajaran**: dengan random split, Level 3 akan tampak sebagai kemenangan
+   +3 sampai +8 pp dan kemungkinan besar dipilih sebagai fitur andalan. Kode yang
+   sama, kesimpulan yang berlawanan.
+
+Judul yang diusulkan: *"Fitur graph terbaik saya ternyata yang paling
+membosankan"* — degree dan component size menang, neighbor fraud rate kalah.
+
+Nilai portofolio dari hasil ini lebih tinggi daripada lift positif sederhana:
+hampir semua orang bisa menghasilkan angka bagus dengan random split. Yang
+membedakan adalah kemampuan mendeteksi kapan angka bagus itu palsu, memisahkan
+komponen yang benar-benar bekerja, dan bersedia melaporkan bahwa kombinasi
+terbaik belum sempat diverifikasi karena disiplin test-sekali-pakai.
+
+### 7. Keputusan lanjutan
+
+**Model utama untuk Fase 5 adalah M3 (`lgbm_baseline_full`)** — baseline tanpa
+graph, AUC test 0,9007 / KS 0,6471. Ini satu-satunya model dengan performa
+out-of-time terukur yang terbaik, dan Fase 5 (scorecard, PSI, kalibrasi,
+cost-based threshold) dibangun di atasnya.
+
+Analisis graph disimpan sebagai temuan riset. Dua hal yang dibawa ke laporan akhir:
+
+1. Fitur graph struktural (Level 1-2) menunjukkan lift +2,30 pp AUC di validation,
+   **belum terverifikasi out-of-time** — kandidat terkuat untuk pekerjaan lanjutan.
+2. Fitur graph berbasis label (Level 3) terbukti merusak generalisasi temporal
+   meski implementasinya lolos setiap pengecekan leakage.
+
+Tidak ada model atau fitur yang diubah setelah test set dibuka. Angka test di atas
+final. Diagnostik dekomposisi di bagian 2 dijalankan pada validation saja, setelah
+test dibuka, dan tidak dipakai untuk mengubah model mana pun.

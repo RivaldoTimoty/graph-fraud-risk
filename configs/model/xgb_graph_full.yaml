@@ -1,0 +1,33 @@
+name: xgb_graph_full
+description: >
+  M4 — baseline B2 (dengan C1-C14) DITAMBAH seluruh fitur graph Fase 3
+  (Level 1-2 struktural + Level 3 berbasis label). Ini model utama project.
+  Lift_B2 = M4 - M3 mengukur nilai tambah graph DI ATAS sinyal entity-level yang
+  sudah disediakan Vesta lewat C-features.
+
+feature_blocks:
+  [base, derived, label_encode, frequency_encode, aggregations, D, C, V, id, graph, uid]
+
+seed: 42
+backend: xgboost
+
+# WAJIB identik dengan lgbm_baseline_full.yaml. Perbandingan hanya sah kalau
+# satu-satunya yang berbeda adalah daftar kolom.
+params_xgb:
+  objective: binary:logistic
+  eval_metric: auc
+  tree_method: hist
+  learning_rate: 0.05
+  max_depth: 7
+  min_child_weight: 100
+  colsample_bytree: 0.7
+  subsample: 0.8
+  reg_alpha: 0.1
+  reg_lambda: 0.1
+  max_bin: 256
+  scale_pos_weight: 1.0
+
+train:
+  num_boost_round: 3000
+  early_stopping_rounds: 100
+  log_every: 200

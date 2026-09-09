@@ -1,0 +1,31 @@
+name: xgb_graph_noC
+description: >
+  M2 — baseline B1 (tanpa C1-C14) DITAMBAH seluruh fitur graph Fase 3.
+  Lift_B1 = M2 - M1 mengukur berapa yang bisa ditemukan graph seandainya
+  C-features tidak tersedia. Selisih Lift_B1 - Lift_B2 adalah tumpang-tindih
+  antara C-features dan graph.
+
+feature_blocks:
+  [base, derived, label_encode, frequency_encode, aggregations, D, V, id, graph, uid]
+
+seed: 42
+backend: xgboost
+
+params_xgb:
+  objective: binary:logistic
+  eval_metric: auc
+  tree_method: hist
+  learning_rate: 0.05
+  max_depth: 7
+  min_child_weight: 100
+  colsample_bytree: 0.7
+  subsample: 0.8
+  reg_alpha: 0.1
+  reg_lambda: 0.1
+  max_bin: 256
+  scale_pos_weight: 1.0
+
+train:
+  num_boost_round: 3000
+  early_stopping_rounds: 100
+  log_every: 200
