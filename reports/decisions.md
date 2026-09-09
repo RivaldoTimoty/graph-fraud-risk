@@ -164,3 +164,129 @@ independen.
 **Implikasi.** Seleksi fitur sebaiknya dilakukan per blok, bukan per kolom
 individual. Korelasi dalam blok kemungkinan sangat tinggi, sehingga reduksi
 dimensi per blok layak dipertimbangkan di Fase 2.
+
+---
+
+## Fase 2 — Baseline Tabular
+
+### D5. Backend adalah XGBoost, bukan LightGBM
+
+**Keputusan.** Semua model gradient boosting memakai XGBoost 3.4.1.
+
+**Alasan.** Binary LightGBM 4.7.0 crash di mesin ini dengan access violation pada
+`LGBM_DatasetSetField` — kegagalan di level C library, bukan di kode project.
+Dikonfirmasi terjadi pada data acak 1000x5 di venv bersih, dan bahkan saat C API
+dipanggil langsung tanpa perantara pandas. Empat perbaikan dicoba dan semuanya
+gagal: downgrade numpy (2.5.2 -> 2.2.6), force-reinstall lightgbm, kombinasi
+keduanya, dan venv baru dengan numpy 1.26.4 + pandas 2.2.3. XGBoost berjalan
+normal di venv yang sama, sehingga masalahnya terisolasi pada binary LightGBM.
+
+**Dampak metodologis: tidak ada.** MASTER_PLAN sudah mencantumkan XGBoost sebagai
+pembanding; yang tertukar hanya peran utama dan pembanding. XGBoost menangani NaN
+secara native (arah default dipelajari per split), sehingga keputusan "unseen
+entity -> NaN" tetap berlaku persis sama. Blok `params` LightGBM dipertahankan di
+kedua file config supaya bisa langsung dipakai lagi kalau binary-nya diperbaiki.
+
+Padanan hyperparameter yang dipakai: `num_leaves: 128` -> `max_depth: 7`,
+`feature_fraction` -> `colsample_bytree`, `bagging_fraction` -> `subsample`,
+`min_data_in_leaf` -> `min_child_weight`.
+
+### D6. Dua varian baseline, bukan satu
+
+**Keputusan.** Dua baseline dilatih dengan pipeline identik, beda hanya pada
+keikutsertaan C1-C14.
+
+| Model | Fitur | AUC | KS | PR-AUC | recall@1% | recall@5% | recall@10% |
+|---|---|---|---|---|---|---|---|
+| B1 `baseline_noC` | 433 | 0,8882 | 0,6109 | 0,4497 | 23,1% | 51,2% | 65,1% |
+| B2 `baseline_full` | 447 | **0,9031** | **0,6435** | 0,5067 | 24,3% | 56,5% | 70,1% |
+| **Selisih (C1-C14)** | 14 | **+1,49 pp** | **+3,27 pp** | +5,70 pp | +1,2 pp | +5,3 pp | +5,0 pp |
+
+**Alasan.** Klaim MASTER_PLAN bahwa C1-C14 "sudah semi-graph" diuji, dan hasilnya
+lebih spesifik dari dugaan awal. Korelasi Spearman pada periode training:
+
+| | C13 | C9 | C2 | C1 |
+|---|---|---|---|---|
+| vs degree `card1` | -0,01 | -0,00 | 0,01 | -0,00 |
+| vs degree UID (`card1`+`addr1`+`D1n`) | **0,46** | **0,35** | **0,30** | 0,25 |
+
+C-features hampir tidak berkorelasi dengan degree kartu, tapi berkorelasi kuat
+dengan degree **klien**. Jadi mereka bukan "semi-graph" secara umum — mereka
+counting features di level entitas klien yang sudah di-resolve Vesta. Itu persis
+lapisan yang akan dibangun ulang di Fase 3.
+
+**Implikasi untuk ablation Fase 4 — ini alasan utama dua varian dipertahankan.**
+Graph features harus dibandingkan terhadap KEDUANYA:
+- Diuji hanya terhadap B2, lift graph akan tampak kecil secara artifisial, karena
+  sebagian sinyal entity-level sudah disediakan C. Kesimpulan "graph tidak
+  berguna" akan menyesatkan.
+- Diuji hanya terhadap B1, lift akan tampak besar secara artifisial, karena graph
+  sebagian hanya menemukan kembali apa yang sudah ada di C.
+
+Selisih B1 vs B2 (**+1,49 pp AUC**) adalah tolok ukur yang bermakna: itulah nilai
+sinyal entity-counting yang sudah tersedia secara gratis di dataset. Kalau graph
+features menambah jauh di bawah angka itu di atas B2, graph tidak memberi
+informasi baru. Kalau menambah jauh di atasnya, graph menangkap struktur yang
+tidak bisa diwakili counting per-klien sederhana.
+
+### D7. `scale_pos_weight` = 1,0 — dipilih meski bukan yang ber-AUC tertinggi
+
+**Hasil eksperimen** (B2, validation, fraud rate aktual 3,43%):
+
+| spw | AUC | KS | PR-AUC | ECE | mean_pred | best_iter |
+|---|---|---|---|---|---|---|
+| **1,0** | 0,9031 | 0,6435 | 0,5067 | **0,0049** | **0,0307** | 863 |
+| 5,0 | **0,9159** | **0,6848** | **0,5335** | 0,0360 | 0,0703 | 755 |
+| 27,6 | 0,9110 | 0,6643 | 0,5114 | 0,1260 | 0,1603 | 621 |
+
+**Prediksi awal saya salah dan itu dicatat di sini dengan sengaja.** Rencana Fase 2
+menyatakan reweighting "tidak akan berpengaruh pada metrik ranking karena AUC/KS
+invarian terhadap transformasi monoton". Itu keliru: reweighting bukan transformasi
+monoton pada skor akhir, melainkan mengubah *fungsi loss*, sehingga pohon yang
+tumbuh pun berbeda. Hasilnya `spw=5` menaikkan AUC +1,28 pp dan KS +4,13 pp.
+
+**Keputusan tetap `spw=1,0`,** dengan alasan berikut:
+
+1. **Kalibrasi.** ECE naik 7x pada `spw=5` (0,0049 -> 0,0360) dan 26x pada
+   `spw=27,6` (0,1260). Rata-rata prediksi `spw=27,6` adalah 0,160 versus fraud
+   rate aktual 0,034 — model over-predict hampir 5x. Fase 5 membutuhkan
+   probabilitas bermakna untuk cost-based threshold; skor yang hanya benar secara
+   ranking tidak cukup untuk menghitung ekspektasi kerugian dalam rupiah.
+2. **Konsistensi lintas fase.** Baseline resmi harus sama di semua eksperimen agar
+   lift graph features di Fase 4 tidak tercampur dengan efek reweighting.
+3. **Kejujuran ablation.** Menaikkan baseline lewat tuning yang tidak akan
+   diterapkan pada model graph akan membuat perbandingan tidak apple-to-apple.
+
+**Catatan untuk Fase 5.** Kenaikan AUC dari `spw=5` cukup besar untuk ditinjau
+ulang setelah kalibrasi isotonic diimplementasikan. Kalau isotonic memulihkan ECE
+tanpa menurunkan ranking, kombinasi `spw=5` + isotonic layak dipertimbangkan
+sebagai model produksi — tapi keputusan itu harus diambil SETELAH ablation graph
+selesai, bukan sebelumnya, dan diterapkan seragam ke semua varian model.
+
+### D8. Anti-leakage pada feature engineering
+
+Semua statistik turunan di-fit hanya pada `is_train`, lalu di-transform ke seluruh
+baris. Perlakuan kategori tak terlihat:
+
+- frequency encoding -> **0** (benar: entitas ini memang tidak pernah muncul saat
+  training)
+- agregasi per entitas -> **NaN**, bukan 0. Nilai 0 akan dibaca model sebagai
+  "nominal jauh di bawah rata-rata", padahal artinya "tidak diketahui". Ini bukan
+  detail kosmetik: 12,3% nilai `card1` di test belum pernah terlihat saat training
+  (T4).
+- label encoding -> **-1**, terpisah dari kategori valid `0..n-1`.
+
+Tiga test di `tests/test_tabular.py` menjaga ini, yang terpenting adalah
+`test_*_ignores_non_training_rows`: mengubah data periode val/test tidak boleh
+mengubah nilai fitur pada baris training. Kalau berubah, berarti statistik ikut
+dihitung dari periode yang seharusnya belum terlihat.
+
+**Temuan implementasi.** 15 kolom `id_*` (id_12..id_38) ternyata bertipe string dan
+awalnya lolos dari daftar `label_encode`, menyebabkan training gagal. Sekarang
+kolom-kolom itu ikut di-encode dan versi mentahnya dikecualikan dari blok fitur.
+
+### D9. Test set masih belum disentuh
+
+Seluruh angka Fase 2 berasal dari validation. Kolom `test_*` di
+`artifacts/experiments.csv` masih kosong untuk semua baris — audit trail bahwa
+test set out-of-time belum pernah dibuka.

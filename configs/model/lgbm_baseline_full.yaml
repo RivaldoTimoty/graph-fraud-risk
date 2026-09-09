@@ -1,0 +1,64 @@
+name: lgbm_baseline_full
+description: >
+  Baseline tabular kuat, TERMASUK C1-C14. C-features adalah counting features di
+  level klien yang sudah di-resolve Vesta (korelasi Spearman C13 vs degree UID =
+  0.46), jadi baseline ini sudah mengandung sebagian sinyal entity-level.
+  Bandingkan dengan lgbm_baseline_noC untuk memisahkan kontribusinya.
+
+feature_blocks: [base, derived, label_encode, frequency_encode, aggregations, D, C, V, id]
+
+seed: 42
+
+# Binary LightGBM crash di mesin ini (access violation pada LGBM_DatasetSetField,
+# terjadi juga pada data acak di venv bersih), jadi backend utama adalah XGBoost.
+# MASTER_PLAN memang mencantumkan XGBoost sebagai pembanding; yang tertukar hanya
+# peran utama/pembanding, metodologi tidak berubah. Blok `params` di bawah
+# dipertahankan supaya bisa langsung dipakai lagi kalau binary-nya diperbaiki.
+backend: xgboost
+
+params:
+  objective: binary
+  metric: auc
+  boosting_type: gbdt
+  learning_rate: 0.05
+  num_leaves: 128
+  min_data_in_leaf: 100
+  feature_fraction: 0.7
+  bagging_fraction: 0.8
+  bagging_freq: 1
+  lambda_l1: 0.1
+  lambda_l2: 0.1
+  max_bin: 255
+  # Ditulis eksplisit meski sudah default: unseen category & agregasi entitas baru
+  # di-encode sebagai NaN, dan LightGBM harus memperlakukannya sebagai "tidak
+  # diketahui" (cabang missing tersendiri), BUKAN sebagai nilai nol.
+  use_missing: true
+  zero_as_missing: false
+  # Baseline resmi. Fraud rate 3.5% tidak ekstrem dan metrik utama berbasis
+  # ranking, sementara reweighting merusak kalibrasi yang dibutuhkan Fase 5.
+  # Nilai 5 dan 27.6 diuji sebagai eksperimen terpisah, tidak dipakai sebagai baseline.
+  scale_pos_weight: 1.0
+  verbosity: -1
+
+# Padanan params di atas untuk XGBoost. num_leaves 128 -> max_depth 7 (2^7=128),
+# feature_fraction -> colsample_bytree, bagging_fraction -> subsample,
+# min_data_in_leaf -> min_child_weight. XGBoost menangani NaN secara native
+# (default direction dipelajari per split), padanan use_missing=true.
+params_xgb:
+  objective: binary:logistic
+  eval_metric: auc
+  tree_method: hist
+  learning_rate: 0.05
+  max_depth: 7
+  min_child_weight: 100
+  colsample_bytree: 0.7
+  subsample: 0.8
+  reg_alpha: 0.1
+  reg_lambda: 0.1
+  max_bin: 256
+  scale_pos_weight: 1.0
+
+train:
+  num_boost_round: 3000
+  early_stopping_rounds: 100
+  log_every: 200

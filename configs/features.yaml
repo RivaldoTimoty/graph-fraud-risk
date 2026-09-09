@@ -1,0 +1,38 @@
+seed: 42
+
+paths:
+  baseline_matrix: data/features/baseline.parquet
+
+# Kolom kategorikal -> label encoding. Blok id_* berisi 15 kolom string
+# (id_12..id_38) yang harus ikut di-encode; id_30/id_31 juga masuk frequency
+# encoding karena kardinalitasnya lebih tinggi (75 dan 130).
+label_encode:
+  [ProductCD, card4, card6, DeviceType, M1, M2, M3, M4, M5, M6, M7, M8, M9,
+   id_12, id_15, id_16, id_23, id_27, id_28, id_29, id_30, id_31, id_33, id_34,
+   id_35, id_36, id_37, id_38]
+
+# Frequency encoding: entitas langka lebih berisiko, entitas sangat sering bisa
+# berarti merchant/proxy besar. Statistik HANYA dari periode training.
+frequency_encode:
+  [card1, card2, card3, card5, addr1, addr2, P_emaildomain, R_emaildomain,
+   DeviceInfo, id_30, id_31]
+
+# Agregasi TransactionAmt per entitas: menjawab "apakah nominal ini tidak wajar
+# UNTUK kartu/alamat ini", bukan sekadar besar secara absolut.
+aggregations:
+  value_col: TransactionAmt
+  group_cols: [card1, card4, addr1]
+  stats: [mean, std]
+
+# Blok kolom mentah yang dipakai apa adanya (LightGBM tahan missing & kolinearitas).
+raw_blocks:
+  base: [TransactionAmt, dist1, dist2, has_identity]
+  D: [D1, D2, D3, D4, D5, D6, D7, D8, D9, D10, D11, D12, D13, D14, D15]
+  C: [C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14]
+  V: null   # null = ambil semua kolom berawalan V dari parquet
+  id: null  # null = ambil semua kolom id_*
+
+# Fitur turunan waktu & nominal.
+derived:
+  time: [hour, dayofweek]
+  amount: [amt_log, amt_decimal]

@@ -3,7 +3,11 @@ data/interim/
 data/graph/
 data/features/
 artifacts/*.pkl
+artifacts/*.json
 *.csv
+# experiments.csv adalah audit trail yang diwajibkan CLAUDE.md — harus ter-commit
+# meski aturan *.csv di atas mengecualikan CSV pada umumnya.
+!artifacts/experiments.csv
 __pycache__/
 .ipynb_checkpoints/
 .venv/
