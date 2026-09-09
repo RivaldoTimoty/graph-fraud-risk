@@ -7,7 +7,10 @@ hanya terlihat karena splitnya temporal.**
 Ablation jujur atas 590.540 transaksi IEEE-CIS (Vesta), dengan validasi
 out-of-time dan test set yang dibuka tepat satu kali.
 
-![Gain chart](reports/figures/07_gain_lift.png)
+![Dashboard](reports/figures/dashboard_preview.png)
+
+*Dashboard interaktif: perbandingan model, eksplorasi jaringan fraud, dan simulasi
+ambang skor dengan trade-off biaya. [Cara menjalankan](#dashboard).*
 
 ---
 
@@ -48,6 +51,8 @@ PSI skor train→test hanya 0,0032 (sangat stabil), tapi fitur berbasis label
 sudah lumpuh: nilainya stabil (drift −2,8%) sementara **kekuatan buktinya runtuh
 52%** (`uid_labeled_count` 6,00 → 2,87; 67,3% baris test tanpa tetangga berlabel).
 Monitoring yang hanya memantau nilai fitur tidak akan menangkap kegagalan ini.
+
+![Gain chart](reports/figures/07_gain_lift.png)
 
 ---
 
