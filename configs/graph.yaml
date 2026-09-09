@@ -1,0 +1,46 @@
+seed: 42
+
+paths:
+  incidence: data/graph/incidence.npz
+  node_mapping: data/graph/node_mapping.parquet
+  features: data/features/graph_level12.parquet
+
+# Kolom yang jadi node atribut pada bipartite graph.
+# card3/card4/card6/addr2/DeviceType SENGAJA dikecualikan: satu nilai menampung
+# 65-88% baris (temuan Fase 1 T3), sehingga akan menjadi hub yang menghubungkan
+# hampir semua transaksi — mahal dan tidak informatif.
+node_columns: [card1, addr1, DeviceInfo, P_emaildomain, R_emaildomain, id_30, id_31]
+
+# Batas degree untuk AGREGASI TETANGGA (bukan untuk fitur degree itu sendiri).
+# P_emaildomain=gmail.com mencakup 228.355 transaksi (38,7%); "berbagi gmail"
+# bukan sinyal fraud, dan menyertakannya menyumbang 66,8 miliar dari 89,5 miliar
+# nnz pada A@A.T. Atribut di atas batas ini tetap dihitung degree-nya (informatif)
+# tapi dikeluarkan dari propagasi tetangga.
+max_degree_for_aggregation: 5000
+
+# Definisi UID (Pendekatan B). D1n = day - D1 menormalkan D1 terhadap waktu
+# sehingga stabil sepanjang periode.
+# Validasi: 217.850 UID unik, 96,6% UID multi-transaksi punya label homogen
+# (bukti UID menangkap entitas nyata), tapi hanya 33,9% baris test terhubung ke
+# UID yang terlihat saat training — fitur UID akan lebih lemah di OOT.
+uid:
+  components: [card1, addr1]
+  time_normalized: D1
+  aggregate_col: TransactionAmt
+
+pagerank:
+  damping: 0.85
+  max_iter: 50
+  tol: 1.0e-8
+
+community:
+  # Louvain pada projected attribute graph (bukan pada 590K node transaksi).
+  resolution: 1.0
+  min_size_reported: 2
+
+# Pasangan kolom untuk cross-cardinality: "satu device berapa kartu" dst.
+cross_cardinality:
+  - [DeviceInfo, card1]   # satu device banyak kartu -> fraud farm
+  - [card1, DeviceInfo]   # satu kartu banyak device -> kartu dicuri
+  - [card1, P_emaildomain]  # satu kartu banyak email -> penyalahgunaan identitas
+  - [addr1, card1]        # satu alamat banyak kartu
