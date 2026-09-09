@@ -1,0 +1,25 @@
+seed: 42
+
+paths:
+  raw_dir: data/raw
+  interim_dir: data/interim
+  train_transaction: data/raw/train_transaction.csv
+  train_identity: data/raw/train_identity.csv
+  test_transaction: data/raw/test_transaction.csv
+  test_identity: data/raw/test_identity.csv
+  merged_train: data/interim/merged.parquet
+
+schema:
+  id_col: TransactionID
+  target_col: isFraud
+  time_col: TransactionDT
+
+expected:
+  train_rows: 590540
+  fraud_rate: 0.03499
+  fraud_rate_tol: 0.001
+
+load:
+  # Kolom identity di test_identity.csv memakai "id-01", train memakai "id_01".
+  # Normalisasi ke underscore supaya satu pipeline bisa dipakai untuk keduanya.
+  normalize_identity_columns: true

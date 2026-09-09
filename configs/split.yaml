@@ -1,0 +1,24 @@
+seed: 42
+
+# Batas dipotong per HARI, bukan per persentil baris, supaya tidak ada hari yang
+# terbelah antara dua split. Hari terbelah membocorkan agregasi harian di Fase 3.
+# Rentang data: hari 0-181 (182 hari / 26 minggu penuh).
+split:
+  train_end_day: 118    # train  = hari 0-118   (inklusif)
+  gap_days: 7           # gap    = hari 119-125 (dibuang, meniru delay label)
+  val_end_day: 150      # val    = hari 126-150
+  # test = hari 151-181, sisa setelah val. OOT, SEKALI PAKAI di akhir project.
+
+paths:
+  masks: data/interim/split_masks.parquet
+
+# Kolom kandidat node graph, dianalisis kardinalitasnya di Fase 1.
+cardinality_candidates:
+  card: [card1, card2, card3, card4, card5, card6]
+  address: [addr1, addr2]
+  email: [P_emaildomain, R_emaildomain]
+  device: [DeviceInfo, DeviceType, id_30, id_31]
+
+# Kolom yang dicek coverage-nya lintas periode (train -> val/test).
+# Ketiganya adalah kandidat node graph utama di Fase 3.
+coverage_columns: [card1, addr1, DeviceInfo]
