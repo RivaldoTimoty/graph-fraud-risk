@@ -74,6 +74,36 @@ def community_and_core(incidence: sp.csr_matrix, resolution: float, seed: int) -
     )
 
 
+def transaction_community_ids(incidence: sp.csr_matrix, resolution: float, seed: int) -> np.ndarray:
+    """Komunitas per transaksi, diwarisi dari atribut PERTAMA yang dimilikinya.
+
+    Dipakai sebagai grup untuk `graph_community_fraud_rate` di Level 3. ID ini
+    tidak pernah menjadi fitur langsung (nilainya arbitrer) — hanya keanggotaan
+    grupnya yang dipakai.
+
+    Transaksi tanpa atribut sama sekali mendapat ID negatif unik, sehingga
+    diperlakukan sebagai grup beranggota satu dan jatuh ke prior di Level 3.
+    """
+    projected = project_attribute_graph(incidence)
+    graph = _to_igraph(projected)
+    ig.set_random_number_generator(random.Random(seed))
+    membership = np.asarray(
+        graph.community_multilevel(weights="weight", resolution=resolution).membership
+    )
+
+    n_tx = incidence.shape[0]
+    result = np.full(n_tx, -1, dtype=np.int64)
+    indptr, indices = incidence.indptr, incidence.indices
+    for i in range(n_tx):
+        start, end = indptr[i], indptr[i + 1]
+        if end > start:
+            result[i] = membership[indices[start]]
+
+    orphan = result < 0
+    result[orphan] = -1 - np.arange(orphan.sum())
+    return result
+
+
 def _rowwise_max(incidence: sp.csr_matrix, values: np.ndarray) -> np.ndarray:
     """Maksimum `values` atas atribut yang dimiliki tiap transaksi."""
     weighted = incidence.multiply(values[np.newaxis, :]).tocsr()

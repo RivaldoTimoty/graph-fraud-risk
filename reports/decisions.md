@@ -290,3 +290,154 @@ kolom-kolom itu ikut di-encode dan versi mentahnya dikecualikan dari blok fitur.
 Seluruh angka Fase 2 berasal dari validation. Kolom `test_*` di
 `artifacts/experiments.csv` masih kosong untuk semua baris — audit trail bahwa
 test set out-of-time belum pernah dibuka.
+
+---
+
+## Fase 3 — Graph Construction & Features
+
+### D10. Node graph: 7 kolom, lima kolom sengaja dibuang
+
+Node atribut: `card1`, `addr1`, `DeviceInfo`, `P_emaildomain`, `R_emaildomain`,
+`id_30`, `id_31`. Graph akhir: 590.540 x 15.995, nnz 2.085.262 (density 2,2e-04).
+
+`card3`, `card4`, `card6`, `addr2`, `DeviceType` dikecualikan karena satu nilai
+menampung 65-88% baris (T3) — sebagai node mereka akan menghubungkan hampir semua
+transaksi tanpa membawa informasi.
+
+Missing value TIDAK dijadikan node. Menyatukan 79,9% transaksi tanpa `DeviceInfo`
+ke satu node akan menciptakan hub palsu raksasa yang tidak punya makna bisnis.
+
+### D11. Adjacency 590K x 590K tidak pernah dimaterialisasi
+
+Estimasi nnz `A @ A.T` adalah **89,5 miliar**, dengan `P_emaildomain` menyumbang
+66,8 miliar sendirian. Semua agregasi memakai `A @ (A.T @ v)` — biayanya linier
+terhadap nnz(A) = 2,08 juta. Urutan kurung ini wajib; `(A @ A.T) @ v` akan
+mencoba membentuk matriks penuh.
+
+`test_neighbor_sum_equals_dense_adjacency_result` membuktikan trik ini menghasilkan
+angka yang identik dengan perhitungan dense pada toy graph — bukan sekadar lebih
+cepat, tapi benar.
+
+### D12. Hub cap 5.000 untuk propagasi tetangga
+
+Atribut dengan degree > 5.000 dikeluarkan dari agregasi tetangga, tapi **tetap
+dipakai sebagai fitur degree**. 69 node terkena, termasuk `gmail.com` dengan
+228.355 transaksi (38,7% data).
+
+Alasan: "berbagi gmail" bukan sinyal fraud. Kalau ikut dipropagasikan, setiap
+transaksi gmail menjadi tetangga setiap transaksi gmail lain — noise yang
+menenggelamkan sinyal dari atribut spesifik seperti device atau kartu.
+
+### D13. `graph_component_id` dibuang dari output
+
+ID komponen bersifat arbitrer (bergantung urutan penelusuran), sehingga model
+akan memperlakukan jarak antar-ID sebagai bermakna padahal tidak. Hanya
+`graph_component_size` yang informatif. Ditemukan saat inspeksi distribusi, dan
+sekarang dijaga oleh `test_component_id_is_not_exposed_as_feature`.
+
+### D14. Level 3 — leave-one-out secara sparse
+
+**Formula.** Agregasi `A @ (A.T @ v)` menyertakan transaksi itu sendiri sebagai
+tetangganya. Bobot kontribusi diri adalah diagonal `(A @ A.T)[i,i] = sum_j A[i,j]^2`,
+yang untuk A biner sama dengan jumlah atribut yang dimiliki i — dihitung tanpa
+membentuk matriksnya:
+
+```
+loo_positive = A @ (A.T @ y_masked) - self_weight * y_masked
+loo_labeled  = A @ (A.T @ mask)     - self_weight * mask
+```
+
+Untuk baris di dalam mask, kontribusi dirinya hilang tepat. Untuk baris di luar
+mask, pengurangannya nol — benar, karena labelnya tidak pernah ikut sejak awal.
+Diverifikasi terhadap perhitungan dense dengan diagonal di-nol-kan.
+
+**Smoothing.** `rate = (pos + alpha*prior) / (labeled + alpha)` dengan alpha = 20
+dan prior = fraud rate periode training = **0,03512**. Ketika `labeled = 0`, hasil
+jatuh tepat ke prior tanpa percabangan khusus. **78.939 baris** memang jatuh ke
+prior karena tidak punya tetangga berlabel.
+
+**label_mask = is_train untuk SEMUA baris,** termasuk saat menghitung fitur untuk
+test. Ini pilihan konservatif yang disengaja: di produksi, label validation
+sebenarnya sudah diketahui saat scoring test, sehingga fitur test di sini lebih
+lemah dari yang bisa dicapai. Dicatat sebagai trade-off sadar, bukan kelalaian.
+
+**Verifikasi pada data nyata.** Membalik SELURUH label val+test pada 590.540 baris
+menghasilkan fitur Level 3 yang **identik bit-per-bit**. Ini bukan hanya test unit
+pada toy graph — dijalankan pada dataset penuh.
+
+**Limitasi 2-hop yang harus dinyatakan.** Koreksi LOO pada 2-hop tidak seeksak
+1-hop: jalur bolak-balik (i -> j -> i) tetap tersisa dalam bentuk tak-langsung
+setelah kontribusi diri dikurangi di kedua tingkat. Fitur `graph_nb_fraud_rate_2hop`
+karena itu punya jaminan lebih lemah daripada versi 1-hop. Kalau di Fase 4
+kontribusinya kecil, sebaiknya digugurkan saja daripada dipertahankan dengan
+jaminan yang tidak penuh.
+
+### T6. Kekuatan sinyal Level 3 dan diagnostik leakage
+
+AUC univariat per split:
+
+| Fitur | train | val | test | gap train-val |
+|---|---|---|---|---|
+| `uid_fraud_rate` | 0,8957 | 0,7802 | 0,6977 | 0,1155 |
+| `graph_nb_fraud_rate_1hop` | 0,8066 | 0,7471 | 0,7269 | 0,0595 |
+| `graph_nb_fraud_rate_2hop` | 0,7828 | 0,7258 | 0,7346 | 0,0570 |
+| `graph_community_fraud_rate` | 0,5823 | 0,6487 | 0,6753 | **-0,0664** |
+
+Gap besar pada `uid_fraud_rate` awalnya tampak seperti gejala menghafal label.
+Investigasi menunjukkan sebaliknya — penyebabnya **coverage**, bukan leakage:
+
+| Split | Baris tanpa tetangga UID berlabel | AUC pada baris yang PUNYA tetangga |
+|---|---|---|
+| train | 33,2% | 0,9725 |
+| val | 57,7% | 0,9957 |
+| test | **67,3%** | **0,9751** |
+
+Pada baris yang benar-benar punya tetangga UID berlabel, AUC test (0,975) bahkan
+sedikit lebih tinggi dari train (0,973) — tidak ada tanda menghafal sama sekali.
+Penurunan AUC agregat murni karena dua pertiga baris test jatuh ke prior yang
+konstan, sehingga tidak membawa informasi apa pun.
+
+Ini konsisten dengan temuan T4: coverage UID train->test hanya 33,9% baris. Karena
+itu `uid_labeled_count` disertakan sebagai fitur — model perlu tahu kapan
+`uid_fraud_rate` layak dipercaya dan kapan ia hanya prior.
+
+`graph_community_fraud_rate` justru punya gap NEGATIF (performa val/test lebih
+baik dari train), yang menyingkirkan kecurigaan leakage untuk fitur itu.
+
+### T7. Fitur Level 3 vs C-features — bukti untuk artikel
+
+Korelasi Spearman pada periode training:
+
+| C-feature | `nb_fraud_rate_1hop` | `nb_fraud_rate_2hop` | `community_fraud_rate` | `uid_fraud_rate` |
+|---|---|---|---|---|
+| C4 | 0,431 | **0,492** | 0,366 | 0,381 |
+| C7 | 0,409 | 0,481 | **0,485** | 0,385 |
+| C8 | 0,424 | 0,480 | 0,340 | 0,379 |
+| C10 | 0,406 | 0,460 | 0,321 | 0,363 |
+| C12 | 0,357 | 0,419 | 0,426 | 0,286 |
+| C9 | -0,350 | -0,399 | -0,277 | **-0,444** |
+| C13 | -0,220 | -0,249 | -0,141 | **-0,461** |
+
+**Temuan utama, dan lebih bernuansa dari hipotesis awal.** Hipotesis di Fase 2
+adalah C13 akan berkorelasi tinggi dengan `nb_fraud_rate_1hop`, karena C13 sudah
+berkorelasi 0,46 dengan degree UID. Yang terjadi:
+
+1. **C13 memang berkorelasi kuat, tapi dengan `uid_fraud_rate` (-0,461), bukan
+   dengan fitur bipartite (-0,220).** Ini justru mempertajam kesimpulan Fase 2:
+   C13 meng-encode sesuatu di level KLIEN, bukan level atribut bersama. Korelasi
+   negatif berarti C13 tinggi menyertai fraud rate klien yang rendah — arah yang
+   berlawanan, tapi kekuatan hubungannya nyata.
+
+2. **Blok C4/C7/C8/C10/C12 berkorelasi 0,36-0,49 dengan fitur graph berbasis
+   label.** Ini kelompok C yang perilakunya paling mirip neighbor fraud rate.
+
+3. **Tidak ada korelasi yang mendekati 0,8+.** Artinya C-features TIDAK menduplikasi
+   fitur graph — mereka menangkap sinyal yang beririsan tapi berbeda. Ini kabar
+   baik untuk ablation: masih ada ruang bagi graph features untuk menambah
+   informasi di atas B2.
+
+**Implikasi untuk artikel.** Narasinya bukan "Vesta sudah punya fitur graph
+sehingga graph tidak berguna", melainkan lebih menarik: *Vesta meng-encode sinyal
+counting di level klien (C13, C9) dan sesuatu yang menyerupai neighbor fraud rate
+(C4, C7, C8, C10), tapi korelasi 0,36-0,49 menunjukkan keduanya tidak sama.*
+Ablation Fase 4 akan mengukur berapa banyak sisa informasi yang benar-benar baru.

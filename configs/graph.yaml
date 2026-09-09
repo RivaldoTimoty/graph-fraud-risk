@@ -38,6 +38,15 @@ community:
   resolution: 1.0
   min_size_reported: 2
 
+# Fitur berbasis label. BAGIAN PALING BERISIKO DI SELURUH PROJECT.
+level3:
+  # Pseudocount smoothing Bayesian: rate = (pos + alpha*prior) / (labeled + alpha).
+  # alpha=20 berarti "butuh 20 tetangga berlabel sebelum bukti mengalahkan prior".
+  # Node tanpa tetangga berlabel jatuh tepat ke prior, tanpa percabangan khusus.
+  alpha: 20.0
+  include_2hop: true
+  features_path: data/features/graph_level3.parquet
+
 # Pasangan kolom untuk cross-cardinality: "satu device berapa kartu" dst.
 cross_cardinality:
   - [DeviceInfo, card1]   # satu device banyak kartu -> fraud farm
