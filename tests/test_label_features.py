@@ -1,4 +1,4 @@
-"""Test fitur Level 3 — pengaman utama terhadap leakage label.
+"""Test fitur Level 3 - pengaman utama terhadap leakage label.
 
 Tiga test paling kritis:
   test_changing_val_test_labels_does_not_change_features

@@ -1,7 +1,7 @@
 """Konversi probabilitas fraud ke skala skor kredit (300-850).
 
 Konvensi industri credit scoring: skor TINGGI = risiko RENDAH. Karena model
-memprediksi probabilitas fraud, hubungannya terbalik — probabilitas naik berarti
+memprediksi probabilitas fraud, hubungannya terbalik - probabilitas naik berarti
 skor turun.
 
 PDO (points to double the odds) menetapkan seberapa banyak poin yang diperlukan

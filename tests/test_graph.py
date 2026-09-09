@@ -58,7 +58,7 @@ def test_incidence_shape_and_nnz(toy):
 
 def test_missing_value_does_not_become_node(toy):
     graph = build_incidence(toy, ["dev"])
-    assert graph.incidence.shape[1] == 4  # X, Y, Z, W — bukan 5
+    assert graph.incidence.shape[1] == 4  # X, Y, Z, W - bukan 5
     # Dua baris terakhir tidak punya edge sama sekali
     assert graph.incidence[8:].nnz == 0
 
@@ -162,7 +162,7 @@ def test_component_features_detect_disconnected_groups():
 
 
 def test_component_id_is_not_exposed_as_feature():
-    """ID komponen arbitrer — kalau bocor sebagai fitur, model salah menafsirkannya."""
+    """ID komponen arbitrer - kalau bocor sebagai fitur, model salah menafsirkannya."""
     df = pd.DataFrame({"a": ["p", "p", "q", "q"]})
     out = component_features(build_incidence(df, ["a"]).incidence)
     assert "graph_component_id" not in out.columns

@@ -1,11 +1,11 @@
 """Pipeline evaluasi risk-style Fase 5 pada M3 (baseline terbaik OOT).
 
-M3 dilatih ulang dengan konfigurasi identik Fase 2/4 — bukan model baru. Prediksi
+M3 dilatih ulang dengan konfigurasi identik Fase 2/4 - bukan model baru. Prediksi
 test yang dihasilkan sama dengan yang sudah dievaluasi di Fase 4, sehingga
 menghitung scorecard/PSI/biaya di atasnya tidak membuka test set untuk kedua kali.
 
 Peninjauan spw=5 dijalankan di VALIDATION saja. Kalau menang, hasilnya dilaporkan
-sebagai temuan — bukan dipakai lalu dievaluasi di test.
+sebagai temuan - bukan dipakai lalu dievaluasi di test.
 """
 
 from __future__ import annotations

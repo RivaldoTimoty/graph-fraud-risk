@@ -1,4 +1,4 @@
-"""Optimasi threshold berbasis biaya — menerjemahkan AUC menjadi bahasa rupiah.
+"""Optimasi threshold berbasis biaya - menerjemahkan AUC menjadi bahasa rupiah.
 
 ASUMSI YANG DINYATAKAN EKSPLISIT:
 
@@ -87,7 +87,7 @@ def sensitivity_analysis(
     """Bagaimana threshold optimal bergeser terhadap asumsi biaya FP.
 
     Mengubah deliverable dari "saya memilih threshold" menjadi "ini alat untuk
-    memilih threshold sesuai asumsi bisnis Anda" — jauh lebih berguna karena
+    memilih threshold sesuai asumsi bisnis Anda" - jauh lebih berguna karena
     biaya FP berbeda antar organisasi dan tidak pernah benar-benar diketahui.
     """
     no_model = baseline_cost(y_true, amounts)

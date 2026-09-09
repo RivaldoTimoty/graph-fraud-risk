@@ -1,4 +1,4 @@
-"""Fitur berbasis UID (Pendekatan B — entity resolution klien).
+"""Fitur berbasis UID (Pendekatan B - entity resolution klien).
 
 Semua fitur di sini struktural: menghitung intensitas dan keberagaman aktivitas
 per klien, TANPA menyentuh label. Statistik berbasis label per UID adalah Level 3
@@ -6,8 +6,8 @@ dan memerlukan label_mask.
 
 CATATAN LEAKAGE YANG HARUS DINYATAKAN DI LAPORAN: fitur UID diagregasi atas
 seluruh periode, sehingga transaksi test ikut menghitung ukuran klien-nya sendiri.
-Ini SAH sebagai simulasi produksi — saat menilai transaksi baru, histori klien
-memang tersedia — tapi berbeda dari fitur yang murni backward-looking. Coverage
+Ini SAH sebagai simulasi produksi - saat menilai transaksi baru, histori klien
+memang tersedia - tapi berbeda dari fitur yang murni backward-looking. Coverage
 UID train->test hanya 33,9% baris, jadi dampaknya di OOT terbatas.
 """
 
@@ -27,12 +27,12 @@ def uid_activity_features(
     `uid_amt_mean/std`    : profil nominal klien. Std tinggi berarti perilaku
         belanja tidak konsisten.
     `uid_amt_ratio`       : nominal transaksi ini relatif terhadap rata-rata
-        kliennya — menjawab "tidak wajar UNTUK klien ini", bukan sekadar besar.
+        kliennya - menjawab "tidak wajar UNTUK klien ini", bukan sekadar besar.
     `uid_n_unique_device` : satu klien memakai banyak device.
     `uid_span_days`       : rentang hari aktivitas klien.
     `uid_tx_per_day`      : kepadatan transaksi; tinggi berarti aktivitas terburu.
 
-    Baris dengan UID tak lengkap (kode negatif) mendapat NaN, bukan 0 — sama
+    Baris dengan UID tak lengkap (kode negatif) mendapat NaN, bukan 0 - sama
     seperti perlakuan unseen entity di Fase 2: 0 akan dibaca model sebagai nilai
     nyata yang sangat rendah, padahal artinya "tidak diketahui".
     """

@@ -1,4 +1,4 @@
-"""Test temporal split — bagian paling kritis Fase 1.
+"""Test temporal split - bagian paling kritis Fase 1.
 
 Kalau split bocor, semua hasil di fase berikutnya tidak sah.
 """
@@ -95,7 +95,7 @@ def test_invalid_boundaries_raise():
 
 @requires_masks
 def test_saved_masks_match_recomputed_split():
-    """Mask tersimpan harus identik dengan hasil hitung ulang — reproducibility."""
+    """Mask tersimpan harus identik dengan hasil hitung ulang - reproducibility."""
     data_cfg = load_config("data")
     df = pd.read_parquet(
         resolve_path(data_cfg["paths"]["merged_train"]), columns=["TransactionID", "TransactionDT"]

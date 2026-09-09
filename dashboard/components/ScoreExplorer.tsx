@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Plot from "./Plot";
-import { Callout, Card, Stat, pct, usd } from "./ui";
+import { Callout, Card, LoadError, Stat, fetchJson, pct, usd } from "./ui";
 import { NORD, plotConfig, plotLayout } from "@/lib/theme";
 import type { CostPayload, ScoreBand, ScoreSample } from "@/lib/types";
 
@@ -49,10 +49,20 @@ export default function ScoreExplorer() {
   const [threshold, setThreshold] = useState(569);
   const [costFp, setCostFp] = useState(5);
 
+  const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
-    fetch("data/score_sample.json").then((r) => r.json()).then(setSample);
-    fetch("data/score_bands.json").then((r) => r.json()).then(setBands);
-    fetch("data/cost_sensitivity.json").then((r) => r.json()).then(setCost);
+    Promise.all([
+      fetchJson<ScoreSample>("score_sample.json"),
+      fetchJson<ScoreBand[]>("score_bands.json"),
+      fetchJson<CostPayload>("cost_sensitivity.json"),
+    ])
+      .then(([s, b, c]) => {
+        setSample(s);
+        setBands(b);
+        setCost(c);
+      })
+      .catch((e: Error) => setError(e.message));
   }, []);
 
   const result = useMemo(
@@ -70,6 +80,7 @@ export default function ScoreExplorer() {
     return { fraud, clean };
   }, [sample]);
 
+  if (error) return <LoadError message={error} />;
   if (!sample || !bands || !cost || !result || !histogram) {
     return <p className="py-12 text-center text-sm text-muted">memuat…</p>;
   }
@@ -244,11 +255,11 @@ export default function ScoreExplorer() {
 
       <Callout>
         <strong className="text-bright">Kenapa tidak ada satu ambang &ldquo;terbaik&rdquo;.</strong>{" "}
-        Titik biaya-minimum bergeser lima kali lipat — dari meninjau 35,7% transaksi (biaya review
+        Titik biaya-minimum bergeser lima kali lipat - dari meninjau 35,7% transaksi (biaya review
         $2) menjadi 7,0% ($25). Angka biaya review hanya bisa ditentukan dari data operasional
         internal, sehingga yang diserahkan adalah alat untuk memilih titik operasi, bukan satu
         rekomendasi tunggal. Perlu dicatat: pada band paling berisiko sekalipun, sekitar tiga
-        perempat transaksi tetap sah — sistem ini penentu prioritas review, bukan alat penolakan
+        perempat transaksi tetap sah - sistem ini penentu prioritas review, bukan alat penolakan
         otomatis.
       </Callout>
     </div>

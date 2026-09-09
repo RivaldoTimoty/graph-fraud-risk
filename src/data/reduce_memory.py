@@ -37,7 +37,7 @@ def _downcast_float(series: pd.Series) -> pd.Series:
 def reduce_memory(df: pd.DataFrame, protected: tuple[str, ...] = PROTECTED_COLUMNS) -> pd.DataFrame:
     """Downcast semua kolom numerik non-protected in-place pada salinan.
 
-    Kolom object dibiarkan apa adanya — konversi ke category ditunda sampai tahap
+    Kolom object dibiarkan apa adanya - konversi ke category ditunda sampai tahap
     feature engineering, karena kategori harus di-fit hanya pada periode training.
     """
     out = df.copy()

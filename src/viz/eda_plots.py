@@ -53,7 +53,7 @@ def plot_hourly_profile(hourly: pd.DataFrame) -> Path:
     ax2 = ax1.twinx()
     ax2.plot(hourly["hour"], hourly["fraud_rate"], color="#bf616a", marker="o")
     ax2.set_ylabel("fraud rate")
-    ax1.set_title("Profil per jam — volume rendah di hour 7-10 menandai offset zona waktu")
+    ax1.set_title("Profil per jam - volume rendah di hour 7-10 menandai offset zona waktu")
     return _save(fig, "02_hourly_profile.png")
 
 

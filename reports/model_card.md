@@ -1,4 +1,4 @@
-# Model Card — Fraud Risk Scorecard (M3)
+# Model Card - Fraud Risk Scorecard (M3)
 
 **Versi:** 1.0 | **Status:** portofolio / riset, BUKAN produksi
 **Terakhir diperbarui:** setelah Fase 5
@@ -14,7 +14,7 @@ fraud yang dikonversi ke skala skor 300–850 mengikuti konvensi credit scoring.
 | | |
 |---|---|
 | Algoritma | XGBoost (gradient boosted trees), 447 fitur |
-| Target | `isFraud` — biner, prevalensi 3,50% |
+| Target | `isFraud` - biner, prevalensi 3,50% |
 | Output | Probabilitas [0,1] → skor 300–850 (tinggi = risiko rendah) |
 | Hyperparameter kunci | `max_depth=7`, `learning_rate=0,05`, `scale_pos_weight=1,0` |
 | Seed | 42 (semua tahap) |
@@ -86,7 +86,7 @@ Distribusi per band (10 band, masing-masing 10% populasi):
 2. `TransactionDT` monoton dan mencerminkan urutan kejadian sebenarnya.
 3. Label `isFraud` lengkap dan benar pada periode training. Dalam praktik, fraud
    yang tidak pernah dilaporkan akan terlabel sebagai non-fraud.
-4. `hour` **bukan jam lokal pengguna** — profil volume menunjukkan offset ~5–7 jam
+4. `hour` **bukan jam lokal pengguna** - profil volume menunjukkan offset ~5–7 jam
    dari tengah malam lokal. Fitur ini valid sebagai sinyal siklikal, tapi tidak
    boleh diberi interpretasi naratif seperti "transaksi dini hari".
 
@@ -95,7 +95,7 @@ Distribusi per band (10 band, masing-masing 10% populasi):
 5. Biaya false negative = nilai transaksi (`TransactionAmt`). Mengabaikan biaya
    penanganan sengketa dan kerugian reputasi.
 6. Biaya false positive = konstanta per transaksi. **Ini asumsi, bukan angka
-   terukur** — karena itu hasil disajikan sebagai sensitivitas terhadap $2/$5/$10/$25.
+   terukur** - karena itu hasil disajikan sebagai sensitivitas terhadap $2/$5/$10/$25.
 7. Setiap transaksi ter-flag menerima review manusia dengan biaya seragam.
 8. Kapasitas review tidak terbatas. Model tidak memodelkan antrean atau SLA.
 
@@ -130,7 +130,7 @@ dinilai lebih tepat.
 
 **Jangan pakai sebagai satu-satunya dasar penolakan otomatis.**
 Pada review rate 10%, model melewatkan 30,6% fraud. Band terburuk punya fraud rate
-24,2% — artinya **75,8% transaksi di band itu sah**. Penolakan otomatis akan
+24,2% - artinya **75,8% transaksi di band itu sah**. Penolakan otomatis akan
 menolak tiga pelanggan jujur untuk setiap satu penipu.
 
 **Jangan pakai di luar populasi e-commerce serupa.**
@@ -141,14 +141,14 @@ pembayaran berbeda.
 **Jangan pakai lebih dari ~3 bulan tanpa retrain.**
 Fraud rate bergeser 2,45× dalam 26 minggu data. Selain itu, empat fitur (`M3`,
 `M7`, `M8`, `M9`) punya CSI 0,28–0,34 karena **missingness-nya berubah** dari 67%
-ke 39% antar periode — makna fitur berubah seiring waktu.
+ke 39% antar periode - makna fitur berubah seiring waktu.
 
 **Jangan pakai probabilitasnya untuk keputusan di luar rentang teramati.**
 Kalibrasi diverifikasi pada rentang probabilitas yang muncul di test. Ekstrapolasi
 ke keputusan pricing atau limit kredit di luar rentang itu tidak didukung bukti.
 
 **Jangan pakai untuk mengambil keputusan tentang individu tanpa jalur banding.**
-Model tidak diaudit untuk bias demografis — dataset tidak menyediakan atribut yang
+Model tidak diaudit untuk bias demografis - dataset tidak menyediakan atribut yang
 diperlukan untuk itu, sehingga ketiadaan bias **tidak dapat diklaim**.
 
 **Jangan pakai fitur graph berbasis label dari repo ini di produksi**, kecuali
@@ -168,7 +168,7 @@ temporal meski implementasinya lolos setiap pengecekan leakage.
 | Kalibrasi (mean prediksi vs aktual) | bias > 0,005 | Keputusan biaya butuh probabilitas benar |
 
 **Jika fitur berbasis entitas dipakai kelak:** pantau **jumlah observasi
-pendukung**, bukan hanya nilai fiturnya. Pelajaran dari Fase 4 —
+pendukung**, bukan hanya nilai fiturnya. Pelajaran dari Fase 4 -
 `uid_fraud_rate` punya nilai stabil (drift −2,8%) sementara kekuatan buktinya
 runtuh 52%. PSI tidak menangkap kegagalan seperti itu.
 
@@ -180,7 +180,7 @@ Seed 42 di semua tahap. Pipeline deterministik: M3 dilatih ulang di Fase 5
 mereproduksi AUC test 0,9007 persis.
 
 Semua path dan hyperparameter berada di `configs/*.yaml`. Riwayat eksperimen di
-`artifacts/experiments.csv` — 9 baris, 4 di antaranya punya `test_auc` terisi,
+`artifacts/experiments.csv` - 9 baris, 4 di antaranya punya `test_auc` terisi,
 yang merupakan audit trail bahwa test set dibuka satu kali untuk empat model.
 
 79 unit test, sebagian besar menguji pencegahan leakage.

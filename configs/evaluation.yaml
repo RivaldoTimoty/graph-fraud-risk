@@ -1,7 +1,7 @@
 seed: 42
 
 # Model final Fase 5. Satu-satunya model dengan angka test out-of-time yang sah
-# (M3 di ablation Fase 4). spw=5 ditinjau ulang di validation saja — kalau menang,
+# (M3 di ablation Fase 4). spw=5 ditinjau ulang di validation saja - kalau menang,
 # hasilnya dilaporkan sebagai temuan, BUKAN dipakai lalu dievaluasi di test.
 model: lgbm_baseline_full
 
@@ -18,7 +18,7 @@ scorecard:
 
 business:
   # Biaya false negative = TransactionAmt transaksi itu sendiri (kerugian aktual
-  # per transaksi), bukan rata-rata — fraud bernilai besar dan kecil punya
+  # per transaksi), bukan rata-rata - fraud bernilai besar dan kecil punya
   # konsekuensi berbeda, dan itulah inti argumen bisnisnya.
   #
   # Biaya false positive = review manual + friksi pelanggan. ASUMSI, bukan angka
@@ -46,5 +46,5 @@ calibration:
 spw_review:
   # Peninjauan Fase 2: spw=5 menaikkan AUC +1,28 pp tapi ECE naik 7x.
   # Pertanyaannya: apakah isotonic memulihkan kalibrasi tanpa mengorbankan ranking?
-  # VALIDATION SAJA — memilih model berdasarkan test akan membatalkan angka test.
+  # VALIDATION SAJA - memilih model berdasarkan test akan membatalkan angka test.
   weights: [1.0, 5.0]

@@ -38,7 +38,7 @@ def cap_high_degree_columns(incidence: sp.csr_matrix, max_degree: int) -> tuple[
 
     Alasan bisnis: P_emaildomain=gmail.com dimiliki 228.355 transaksi (38,7%).
     "Berbagi gmail" bukan sinyal fraud, tapi kalau ikut dipropagasikan, setiap
-    transaksi gmail menjadi tetangga setiap transaksi gmail lain — noise yang
+    transaksi gmail menjadi tetangga setiap transaksi gmail lain - noise yang
     menenggelamkan sinyal dari atribut spesifik, sekaligus menyumbang 66,8 miliar
     dari 89,5 miliar nnz.
 
@@ -54,7 +54,7 @@ def cap_high_degree_columns(incidence: sp.csr_matrix, max_degree: int) -> tuple[
 def degree_features(graph: BipartiteGraph) -> pd.DataFrame:
     """Level 1: berapa transaksi lain berbagi tiap atribut dengan transaksi ini.
 
-    Arti bisnis: degree tinggi pada card1 berarti kartu dipakai sangat sering —
+    Arti bisnis: degree tinggi pada card1 berarti kartu dipakai sangat sering -
     bisa merchant sah, bisa kartu yang dieksploitasi. Model yang menentukan.
     """
     out = {}
@@ -86,7 +86,7 @@ def neighbor_count_features(incidence: sp.csr_matrix) -> pd.DataFrame:
     """Level 1: ukuran lingkungan 2-hop tiap transaksi.
 
     `graph_two_hop_count` menghitung berapa banyak pasangan (tetangga, atribut
-    bersama) yang dimiliki transaksi — proksi seberapa terhubung transaksi ini
+    bersama) yang dimiliki transaksi - proksi seberapa terhubung transaksi ini
     dalam jaringan, tanpa membentuk adjacency.
     """
     ones = np.ones(incidence.shape[0], dtype=np.float32)
@@ -156,7 +156,7 @@ def component_features(incidence: sp.csr_matrix) -> pd.DataFrame:
     """Level 2: ukuran connected component tempat transaksi berada.
 
     Arti bisnis: komponen besar berarti sekumpulan transaksi yang saling terkait
-    lewat rantai atribut bersama — kandidat fraud ring bila juga padat. Dihitung
+    lewat rantai atribut bersama - kandidat fraud ring bila juga padat. Dihitung
     pada graph bipartit gabungan (transaksi + atribut) sebagai satu graph.
     """
     n_tx = incidence.shape[0]

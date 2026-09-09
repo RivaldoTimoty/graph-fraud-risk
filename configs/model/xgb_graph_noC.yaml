@@ -1,6 +1,6 @@
 name: xgb_graph_noC
 description: >
-  M2 — baseline B1 (tanpa C1-C14) DITAMBAH seluruh fitur graph Fase 3.
+  M2 - baseline B1 (tanpa C1-C14) DITAMBAH seluruh fitur graph Fase 3.
   Lift_B1 = M2 - M1 mengukur berapa yang bisa ditemukan graph seandainya
   C-features tidak tersedia. Selisih Lift_B1 - Lift_B2 adalah tumpang-tindih
   antara C-features dan graph.

@@ -2,7 +2,7 @@
 
 Tujuan bukan mencari nilai terbaik, tapi mendokumentasikan bahwa reweighting
 hampir tidak mengubah metrik berbasis ranking (AUC/KS) sementara merusak
-kalibrasi — yang dibutuhkan Fase 5 untuk cost-based threshold.
+kalibrasi - yang dibutuhkan Fase 5 untuk cost-based threshold.
 
 Baseline resmi tetap scale_pos_weight=1.0 dan dipakai konsisten di semua fase.
 """

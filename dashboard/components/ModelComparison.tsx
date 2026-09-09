@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Plot from "./Plot";
-import { Callout, Card, Stat, pct, pp } from "./ui";
+import { Callout, Card, LoadError, Stat, fetchJson, pct, pp } from "./ui";
 import { NORD, plotConfig, plotLayout } from "@/lib/theme";
 import {
   METRIC_LABELS,
@@ -25,12 +25,18 @@ const MODEL_ORDER = ["M1_baseline_noC", "M2_graph_noC", "M3_baseline_full", "M4_
 export default function ModelComparison() {
   const [metrics, setMetrics] = useState<MetricsPayload | null>(null);
   const [gains, setGains] = useState<GainCurve | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("data/metrics.json").then((r) => r.json()).then(setMetrics);
-    fetch("data/gain_curve.json").then((r) => r.json()).then(setGains);
+    Promise.all([fetchJson<MetricsPayload>("metrics.json"), fetchJson<GainCurve>("gain_curve.json")])
+      .then(([m, g]) => {
+        setMetrics(m);
+        setGains(g);
+      })
+      .catch((e: Error) => setError(e.message));
   }, []);
 
+  if (error) return <LoadError message={error} />;
   if (!metrics) return <p className="py-12 text-center text-sm text-muted">memuat…</p>;
 
   const byName = Object.fromEntries(metrics.models.map((m) => [m.name, m]));
@@ -45,7 +51,7 @@ export default function ModelComparison() {
         <Stat
           label="Lift graph (di atas M3)"
           value={pp(metrics.lifts.lift_b2.auc)}
-          hint="AUC — negatif"
+          hint="AUC - negatif"
           tone="bad"
         />
         <Stat
@@ -110,7 +116,7 @@ export default function ModelComparison() {
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card
-          title="Gain chart — M3"
+          title="Gain chart - M3"
           subtitle="Berapa fraud tertangkap pada tiap kapasitas review."
         >
           {gains && (
@@ -197,7 +203,7 @@ export default function ModelComparison() {
         struktural (degree, PageRank, ukuran komponen) memberi{" "}
         <span className="text-ok">+2,30 pp AUC</span> di validation. Fitur berbasis label
         (neighbor fraud rate, UID fraud rate) merusak generalisasi dan menyeret yang baik turun
-        bersamanya — penyebabnya bukan kebocoran label, melainkan runtuhnya kekuatan bukti:{" "}
+        bersamanya - penyebabnya bukan kebocoran label, melainkan runtuhnya kekuatan bukti:{" "}
         <code className="text-warn">uid_labeled_count</code> turun 52% dari train ke test, dan 67,3%
         baris test tidak punya tetangga berlabel sama sekali. Kombinasi terbaik (baseline + graph
         struktural) belum diuji out-of-time karena test set sudah dikunci.

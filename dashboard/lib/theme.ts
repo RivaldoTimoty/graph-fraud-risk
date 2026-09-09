@@ -1,4 +1,4 @@
-/** Palet Nord — sama dengan yang dipakai figur matplotlib di reports/figures/,
+/** Palet Nord - sama dengan yang dipakai figur matplotlib di reports/figures/,
  *  supaya dashboard dan laporan terlihat satu sistem. */
 export const NORD = {
   bg: "#242933",

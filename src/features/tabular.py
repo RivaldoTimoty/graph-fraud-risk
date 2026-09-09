@@ -9,7 +9,7 @@ Kategori yang tidak pernah terlihat saat training di-encode sebagai:
 - frequency  -> 0   (benar: entitas ini memang tidak pernah muncul di training)
 - agregasi   -> NaN (BUKAN 0: 0 akan dibaca model sebagai "nominal jauh di bawah
                      rata-rata", padahal artinya "tidak diketahui")
-Ini bukan detail kosmetik — 12,3% nilai card1 di test belum pernah terlihat saat
+Ini bukan detail kosmetik - 12,3% nilai card1 di test belum pernah terlihat saat
 training (temuan Fase 1 T4).
 """
 
@@ -51,7 +51,7 @@ class GroupAggregator:
     "apakah nominal ini tidak wajar UNTUK kartu ini". Rasio amt/mean_per_card
     menangkap deviasi dari perilaku normal entitas tersebut.
 
-    Entitas yang tidak terlihat saat training menghasilkan NaN — lihat catatan
+    Entitas yang tidak terlihat saat training menghasilkan NaN - lihat catatan
     leakage di docstring modul.
     """
 
@@ -112,7 +112,7 @@ class LabelEncoder:
 
 
 def amount_features(df: pd.DataFrame, col: str = "TransactionAmt") -> pd.DataFrame:
-    """Transformasi nominal transaksi. Tidak butuh fitting — bebas leakage.
+    """Transformasi nominal transaksi. Tidak butuh fitting - bebas leakage.
 
     `amt_log`     : distribusi TransactionAmt sangat skew; log mendekatkan ke normal.
     `amt_decimal` : bagian desimal. Nominal hasil konversi mata uang punya desimal

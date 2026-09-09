@@ -1,6 +1,6 @@
 """Fitur graph Level 3: berbasis label. BAGIAN PALING BERISIKO DI PROJECT INI.
 
-Setiap fungsi di modul ini WAJIB menerima `label_mask` — boolean array yang
+Setiap fungsi di modul ini WAJIB menerima `label_mask` - boolean array yang
 menandai baris mana yang labelnya boleh dipakai. Tidak ada nilai default, supaya
 tidak mungkin lupa memberikannya.
 
@@ -14,7 +14,7 @@ TIGA ATURAN YANG MENGIKAT:
 
 2. Leave-one-out: transaksi tidak boleh melihat labelnya sendiri lewat rata-rata
    tetangganya. Tanpa LOO, `neighbor_fraud_rate` untuk baris training akan
-   mengandung labelnya sendiri — model lalu "menghafal" dan performa validation
+   mengandung labelnya sendiri - model lalu "menghafal" dan performa validation
    terlihat jauh lebih baik daripada kenyataan.
 
 3. Node tanpa tetangga berlabel mendapat prior global dari periode training,
@@ -37,7 +37,7 @@ Koreksi LOO menjadi pengurangan langsung:
     loo_labeled  = A @ (A.T @ mask)     - self_weight * mask
 
 Untuk baris di dalam mask, kontribusi dirinya hilang tepat. Untuk baris di luar
-mask, pengurangannya nol — memang benar, karena labelnya tidak pernah ikut
+mask, pengurangannya nol - memang benar, karena labelnya tidak pernah ikut
 dijumlahkan sejak awal.
 """
 
@@ -50,7 +50,7 @@ import scipy.sparse as sp
 
 def _validate_mask(label_mask: np.ndarray, n_rows: int) -> np.ndarray:
     if label_mask is None:
-        raise ValueError("label_mask wajib diberikan — fitur Level 3 tidak boleh tanpa mask")
+        raise ValueError("label_mask wajib diberikan - fitur Level 3 tidak boleh tanpa mask")
     mask = np.asarray(label_mask)
     if mask.shape != (n_rows,):
         raise ValueError(f"label_mask harus berbentuk ({n_rows},), bukan {mask.shape}")
@@ -60,7 +60,7 @@ def _validate_mask(label_mask: np.ndarray, n_rows: int) -> np.ndarray:
 
 
 def training_prior(y: np.ndarray, label_mask: np.ndarray) -> float:
-    """Fraud rate global dari periode training saja — target smoothing."""
+    """Fraud rate global dari periode training saja - target smoothing."""
     mask = _validate_mask(label_mask, len(y))
     if not mask.any():
         raise ValueError("label_mask kosong: tidak ada baris yang labelnya boleh dipakai")
@@ -71,7 +71,7 @@ def smooth_rate(positive: np.ndarray, labeled: np.ndarray, prior: float, alpha: 
     """Smoothing Bayesian: (pos + alpha*prior) / (labeled + alpha).
 
     Ketika `labeled` nol, hasilnya jatuh tepat ke `prior` tanpa percabangan
-    khusus — inilah yang memenuhi aturan "node baru dapat prior global".
+    khusus - inilah yang memenuhi aturan "node baru dapat prior global".
     """
     return ((positive + alpha * prior) / (labeled + alpha)).astype("float32")
 
@@ -93,7 +93,7 @@ def neighbor_label_stats(
 ) -> tuple[np.ndarray, np.ndarray]:
     """Jumlah tetangga fraud dan tetangga berlabel, 1-hop, dengan koreksi LOO.
 
-    Mengembalikan (positive, labeled) — belum di-smooth, supaya bisa dipakai
+    Mengembalikan (positive, labeled) - belum di-smooth, supaya bisa dipakai
     ulang untuk propagasi 2-hop.
     """
     mask = _validate_mask(label_mask, incidence.shape[0])
@@ -185,7 +185,7 @@ def build_level3_features(
     out = {
         "graph_nb_fraud_rate_1hop": smooth_rate(pos1, lab1, prior, alpha),
         # Bukan fitur berbasis label: hanya menghitung BERAPA tetangga berlabel,
-        # tidak menyentuh nilai y. Penting untuk interpretasi — rate dengan count
+        # tidak menyentuh nilai y. Penting untuk interpretasi - rate dengan count
         # rendah tidak bisa dipercaya, dan model perlu tahu itu.
         "graph_nb_labeled_count": lab1.astype("float32"),
     }

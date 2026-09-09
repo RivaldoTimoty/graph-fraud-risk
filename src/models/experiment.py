@@ -3,7 +3,7 @@
 Setiap baris adalah satu training run. Hash hyperparameter membuat konfigurasi
 yang identik dapat dikenali tanpa membandingkan seluruh dict.
 
-Kolom `test_*` sengaja dibiarkan kosong sampai Fase 5 — test set out-of-time
+Kolom `test_*` sengaja dibiarkan kosong sampai Fase 5 - test set out-of-time
 hanya dibuka sekali. Jumlah baris dengan test_auc terisi adalah audit trail
 berapa kali test set benar-benar disentuh.
 """

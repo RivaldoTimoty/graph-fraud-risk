@@ -23,7 +23,7 @@ export default function Home() {
           <p className="mt-4 max-w-3xl text-sm leading-relaxed text-body sm:text-base">
             Ablation jujur atas nilai tambah graph features pada deteksi fraud. Fitur graph berbasis
             label menurunkan AUC 1,91 pp di periode uji, sementara fitur graph struktural justru
-            memberi +2,30 pp. Perbedaan itu hanya terlihat karena splitnya temporal — dengan random
+            memberi +2,30 pp. Perbedaan itu hanya terlihat karena splitnya temporal - dengan random
             split, keduanya akan tampak menang.
           </p>
           <div className="mt-6 flex flex-wrap gap-x-6 gap-y-2 text-xs text-muted">

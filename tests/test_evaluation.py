@@ -94,7 +94,7 @@ def test_cost_curve_uses_per_transaction_amount():
     # Threshold terendah: semua ter-flag, tidak ada fraud yang lolos.
     assert curve.iloc[0]["fn_cost"] == pytest.approx(0.0)
     # Threshold tertinggi (0.9): hanya transaksi 0 ter-flag, fraud kedua lolos.
-    # Biayanya 10.0 — nilai transaksi ITU, bukan rata-rata fraud (505.0).
+    # Biayanya 10.0 - nilai transaksi ITU, bukan rata-rata fraud (505.0).
     assert curve.iloc[-1]["fn_cost"] == pytest.approx(10.0)
 
     # Di threshold 0.5: fraud senilai 1000 tertangkap, fraud senilai 10 lolos.

@@ -8,7 +8,7 @@ paths:
 # Kolom yang jadi node atribut pada bipartite graph.
 # card3/card4/card6/addr2/DeviceType SENGAJA dikecualikan: satu nilai menampung
 # 65-88% baris (temuan Fase 1 T3), sehingga akan menjadi hub yang menghubungkan
-# hampir semua transaksi — mahal dan tidak informatif.
+# hampir semua transaksi - mahal dan tidak informatif.
 node_columns: [card1, addr1, DeviceInfo, P_emaildomain, R_emaildomain, id_30, id_31]
 
 # Batas degree untuk AGREGASI TETANGGA (bukan untuk fitur degree itu sendiri).
@@ -22,7 +22,7 @@ max_degree_for_aggregation: 5000
 # sehingga stabil sepanjang periode.
 # Validasi: 217.850 UID unik, 96,6% UID multi-transaksi punya label homogen
 # (bukti UID menangkap entitas nyata), tapi hanya 33,9% baris test terhubung ke
-# UID yang terlihat saat training — fitur UID akan lebih lemah di OOT.
+# UID yang terlihat saat training - fitur UID akan lebih lemah di OOT.
 uid:
   components: [card1, addr1]
   time_normalized: D1

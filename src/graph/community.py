@@ -2,7 +2,7 @@
 
 Louvain dijalankan pada PROJECTED ATTRIBUTE GRAPH (atribut-ke-atribut, ~16K node),
 bukan pada 590K node transaksi. Alasannya: projeksi atribut jauh lebih kecil,
-dan komunitas atribut adalah yang punya makna bisnis — sekumpulan kartu, alamat,
+dan komunitas atribut adalah yang punya makna bisnis - sekumpulan kartu, alamat,
 dan device yang saling terkait adalah kandidat fraud ring. Transaksi kemudian
 mewarisi komunitas dari atribut yang dimilikinya.
 
@@ -22,7 +22,7 @@ import scipy.sparse as sp
 def project_attribute_graph(incidence: sp.csr_matrix) -> sp.csr_matrix:
     """Graph atribut-ke-atribut: dua atribut terhubung bila berbagi transaksi.
 
-    Aman dimaterialisasi — dimensinya n_atribut (~16K), bukan n_transaksi (590K).
+    Aman dimaterialisasi - dimensinya n_atribut (~16K), bukan n_transaksi (590K).
     Bobot edge = jumlah transaksi yang memiliki kedua atribut.
     """
     projected = (incidence.T @ incidence).tocsr()
@@ -42,7 +42,7 @@ def community_and_core(incidence: sp.csr_matrix, resolution: float, seed: int) -
     """Komunitas Louvain dan k-core per transaksi, diwarisi dari atributnya.
 
     `graph_community_size` : ukuran komunitas atribut terbesar yang dimiliki
-        transaksi — proksi skala klaster tempat transaksi berada.
+        transaksi - proksi skala klaster tempat transaksi berada.
     `graph_max_kcore`      : k-core tertinggi di antara atribut transaksi. Nilai
         tinggi berarti atribut berada dalam struktur yang sangat padat, ciri khas
         ring yang saling terhubung rapat.
@@ -78,7 +78,7 @@ def transaction_community_ids(incidence: sp.csr_matrix, resolution: float, seed:
     """Komunitas per transaksi, diwarisi dari atribut PERTAMA yang dimilikinya.
 
     Dipakai sebagai grup untuk `graph_community_fraud_rate` di Level 3. ID ini
-    tidak pernah menjadi fitur langsung (nilainya arbitrer) — hanya keanggotaan
+    tidak pernah menjadi fitur langsung (nilainya arbitrer) - hanya keanggotaan
     grupnya yang dipakai.
 
     Transaksi tanpa atribut sama sekali mendapat ID negatif unik, sehingga

@@ -1,6 +1,6 @@
 """Precompute artefak ringan untuk dashboard Next.js.
 
-Model, parquet, dan CSV mentah semuanya ter-.gitignore — benar untuk repo, tapi
+Model, parquet, dan CSV mentah semuanya ter-.gitignore - benar untuk repo, tapi
 artinya dashboard tidak akan punya data setelah `git clone`. Script ini
 menghasilkan JSON kecil yang ter-commit, supaya dashboard jalan dari clone bersih
 tanpa perlu menjalankan ulang seluruh pipeline.
@@ -80,7 +80,7 @@ def export_metrics() -> None:
             "models": models,
             "lifts": lifts,
             "decomposition": {
-                "note": "validation saja — test sudah dikunci untuk 4 model di atas",
+                "note": "validation saja - test sudah dikunci untuk 4 model di atas",
                 "rows": [
                     {"name": "B2 (baseline)", "n_features": 447, "auc": 0.9031, "ks": 0.6435},
                     {"name": "B2 + Level 1-2", "n_features": 473, "auc": 0.9261, "ks": 0.7096},
@@ -189,7 +189,7 @@ def _build_subgraph(frame: pd.DataFrame, column: str, value, rng) -> dict | None
     """Subgraph transaksi-atribut di sekitar satu nilai atribut.
 
     NetworkX dipakai HANYA untuk layout subgraph kecil (<60 node), sesuai aturan
-    project — komputasi graph skala penuh memakai scipy.sparse.
+    project - komputasi graph skala penuh memakai scipy.sparse.
     """
     rows = frame[frame[column] == value]
     if not SUBGRAPH_MIN_SIZE <= len(rows) <= SUBGRAPH_MAX_SIZE:

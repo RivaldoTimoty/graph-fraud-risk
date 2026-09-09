@@ -1,4 +1,4 @@
-"""Test feature engineering — fokus pada anti-leakage.
+"""Test feature engineering - fokus pada anti-leakage.
 
 Test paling penting di sini adalah `test_*_ignores_non_training_rows`: kalau
 mengubah data val/test mengubah nilai fitur pada baris train, berarti statistik
@@ -55,7 +55,7 @@ def test_frequency_encoder_ignores_non_training_rows(toy):
 
 
 def test_group_aggregator_unseen_entity_is_nan_not_zero(toy):
-    """Entitas baru harus NaN — 0 akan dibaca model sebagai 'nominal sangat kecil'."""
+    """Entitas baru harus NaN - 0 akan dibaca model sebagai 'nominal sangat kecil'."""
     df, mask = toy
     out = GroupAggregator("TransactionAmt", ["card1"], ["mean"]).fit(df, mask).transform(df)
 

@@ -6,7 +6,7 @@ const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Graph Fraud Risk — IEEE-CIS",
+  title: "Graph Fraud Risk - IEEE-CIS",
   description:
     "Ablation jujur graph features pada deteksi fraud, dengan validasi out-of-time.",
 };

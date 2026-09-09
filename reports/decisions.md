@@ -5,7 +5,7 @@ technical write-up.
 
 ---
 
-## Fase 1 — Temporal Split & EDA
+## Fase 1 - Temporal Split & EDA
 
 ### D1. Split dipotong pada batas hari, bukan persentil baris
 
@@ -25,7 +25,7 @@ agregasi harian di Fase 3 akan membocorkan informasi lintas batas kalau itu terj
 Memotong di batas hari menghilangkan risiko tersebut sepenuhnya.
 
 **Trade-off.** Proporsi tidak persis 70/15/15. Hasil aktual 69,5 / 11,4 / 15,1
-(sisanya gap) karena volume harian tidak seragam — paruh kedua data lebih tipis.
+(sisanya gap) karena volume harian tidak seragam - paruh kedua data lebih tipis.
 Validation lebih kecil dari nominal; dapat diterima karena val hanya dipakai untuk
 early stopping dan tuning, bukan pelaporan.
 
@@ -38,7 +38,7 @@ ulang, label untuk transaksi paling baru belum tersedia karena chargeback butuh
 waktu. Tanpa gap, model dievaluasi pada kondisi yang lebih mudah daripada produksi.
 
 **Trade-off.** MASTER_PLAN menyebut 1–2 minggu. Dipilih 7 hari, bukan 14, karena
-total data hanya 182 hari — gap 14 hari memakan 7,7% data dan memperkecil train
+total data hanya 182 hari - gap 14 hari memakan 7,7% data dan memperkecil train
 tanpa manfaat metodologis tambahan yang jelas. Fraud rate di periode gap (3,53%)
 tidak berbeda dari periode sekitarnya, jadi tidak ada bias sistematis dari membuang
 jendela ini.
@@ -53,7 +53,7 @@ early stopping memakai validation. Setiap evaluasi test dicatat di
 
 Split ditulis ke `data/interim/split_masks.parquet` (`TransactionID`, `is_train`,
 `is_val`, `is_test`, `is_gap`) alih-alih dihitung ulang tiap kali. Alasan:
-reproducibility — semua fase memakai definisi split yang identik, dan perubahan
+reproducibility - semua fase memakai definisi split yang identik, dan perubahan
 tidak sengaja pada config akan terdeteksi oleh test yang membandingkan mask
 tersimpan dengan hasil hitung ulang. Kolom `is_train` akan dipakai langsung sebagai
 `label_mask` untuk fitur graph berbasis label di Fase 3.
@@ -62,14 +62,14 @@ tersimpan dengan hasil hitung ulang. Kolom `is_train` akan dipakai langsung seba
 
 ### Temuan EDA yang memengaruhi fase berikutnya
 
-#### T1. Fraud rate tidak stabil — drift 2,45× antar minggu
+#### T1. Fraud rate tidak stabil - drift 2,45× antar minggu
 
 Rentang data 182 hari (26 minggu penuh), fraud rate keseluruhan **3,50%**.
 
 | Ukuran | Nilai |
 |---|---|
-| Minggu dengan fraud rate terendah | **minggu 3 — 2,07%** |
-| Minggu dengan fraud rate tertinggi | **minggu 16 — 5,07%** |
+| Minggu dengan fraud rate terendah | **minggu 3 - 2,07%** |
+| Minggu dengan fraud rate tertinggi | **minggu 16 - 5,07%** |
 | Rasio max/min | **2,45×** |
 | Standar deviasi antar minggu | 0,69 pp |
 | Rata-rata minggu 0–3 | **2,49%** |
@@ -80,7 +80,7 @@ minggu 5–10 (~4,2%), lalu berfluktuasi di kisaran 3–4% sampai akhir. Kenaika
 sebesar 1,7 pp dalam sebulan adalah perubahan rezim, bukan variasi musiman biasa.
 
 **Implikasi.** (a) Model yang dilatih pada periode awal akan under-predict di
-periode berikutnya — kalibrasi wajib dicek ulang pada test OOT, bukan hanya
+periode berikutnya - kalibrasi wajib dicek ulang pada test OOT, bukan hanya
 diasumsikan. (b) Ini alasan tambahan mengapa metrik berbasis ranking (AUC, KS)
 harus dilaporkan berdampingan dengan kalibrasi. (c) Menjadi bahan bagian limitasi
 di artikel: lift graph features harus dinilai relatif terhadap baseline yang sama-sama
@@ -98,10 +98,10 @@ pengguna berada di zona waktu Amerika.
 
 **Implikasi.** `hour` tetap dipakai sebagai fitur siklikal, tapi di laporan tidak
 boleh diberi label interpretatif seperti "transaksi dini hari". Fraud rate pada
-hour 7 mencapai 10,6% versus 2,3% pada hour 13 — sinyalnya kuat, tapi penjelasan
+hour 7 mencapai 10,6% versus 2,3% pada hour 13 - sinyalnya kuat, tapi penjelasan
 naratifnya harus hati-hati.
 
-#### T3. Kandidat node graph — kardinalitas
+#### T3. Kandidat node graph - kardinalitas
 
 | Kolom | Unik | % missing | % nilai singleton | Median ukuran grup |
 |---|---|---|---|---|
@@ -117,13 +117,13 @@ naratifnya harus hati-hati.
 **Implikasi untuk desain graph (Fase 3).**
 - `card1` adalah kandidat node terkuat: kardinalitas tinggi, tanpa missing, ukuran
   grup wajar.
-- `DeviceInfo` informatif tapi 79,9% missing — node hanya terbentuk untuk seperlima
+- `DeviceInfo` informatif tapi 79,9% missing - node hanya terbentuk untuk seperlima
   transaksi. Perlu diputuskan apakah missing diperlakukan sebagai node tersendiri
   (tidak disarankan: akan menciptakan hub raksasa palsu) atau transaksi tersebut
   dibiarkan tanpa edge device.
 - `card3`, `card4`, `card6`, `addr2`, `DeviceType` punya konsentrasi ekstrem (satu
   nilai menampung 65–88% baris). Menjadikannya node akan menghasilkan hub yang
-  menghubungkan hampir semua transaksi — tidak informatif dan mahal secara komputasi.
+  menghubungkan hampir semua transaksi - tidak informatif dan mahal secara komputasi.
   **Kolom-kolom ini tidak dipakai sebagai node.**
 - 25–37% nilai pada `card1`/`addr1`/`DeviceInfo` hanya muncul sekali. Node berderajat
   1 tidak menghubungkan transaksi mana pun; fitur graph untuk baris tersebut akan
@@ -145,7 +145,7 @@ Berapa persen entitas di val/test yang sudah pernah terlihat di periode training
 
 **Implikasi.** Coverage berbobot baris tinggi (96,6–100%), artinya secara volume
 hampir semua transaksi OOT terhubung ke entitas yang statistiknya sudah diketahui
-dari training — kabar baik untuk fitur graph berbasis label. Namun coverage berbobot
+dari training - kabar baik untuk fitur graph berbasis label. Namun coverage berbobot
 nilai unik jauh lebih rendah (78,9–97,6%): entitas baru terus bermunculan, hanya saja
 masing-masing bervolume kecil. Untuk `DeviceInfo` di test, 21,1% nilai unik belum
 pernah terlihat.
@@ -167,14 +167,14 @@ dimensi per blok layak dipertimbangkan di Fase 2.
 
 ---
 
-## Fase 2 — Baseline Tabular
+## Fase 2 - Baseline Tabular
 
 ### D5. Backend adalah XGBoost, bukan LightGBM
 
 **Keputusan.** Semua model gradient boosting memakai XGBoost 3.4.1.
 
 **Alasan.** Binary LightGBM 4.7.0 crash di mesin ini dengan access violation pada
-`LGBM_DatasetSetField` — kegagalan di level C library, bukan di kode project.
+`LGBM_DatasetSetField` - kegagalan di level C library, bukan di kode project.
 Dikonfirmasi terjadi pada data acak 1000x5 di venv bersih, dan bahkan saat C API
 dipanggil langsung tanpa perantara pandas. Empat perbaikan dicoba dan semuanya
 gagal: downgrade numpy (2.5.2 -> 2.2.6), force-reinstall lightgbm, kombinasi
@@ -211,11 +211,11 @@ lebih spesifik dari dugaan awal. Korelasi Spearman pada periode training:
 | vs degree UID (`card1`+`addr1`+`D1n`) | **0,46** | **0,35** | **0,30** | 0,25 |
 
 C-features hampir tidak berkorelasi dengan degree kartu, tapi berkorelasi kuat
-dengan degree **klien**. Jadi mereka bukan "semi-graph" secara umum — mereka
+dengan degree **klien**. Jadi mereka bukan "semi-graph" secara umum - mereka
 counting features di level entitas klien yang sudah di-resolve Vesta. Itu persis
 lapisan yang akan dibangun ulang di Fase 3.
 
-**Implikasi untuk ablation Fase 4 — ini alasan utama dua varian dipertahankan.**
+**Implikasi untuk ablation Fase 4 - ini alasan utama dua varian dipertahankan.**
 Graph features harus dibandingkan terhadap KEDUANYA:
 - Diuji hanya terhadap B2, lift graph akan tampak kecil secara artifisial, karena
   sebagian sinyal entity-level sudah disediakan C. Kesimpulan "graph tidak
@@ -229,7 +229,7 @@ features menambah jauh di bawah angka itu di atas B2, graph tidak memberi
 informasi baru. Kalau menambah jauh di atasnya, graph menangkap struktur yang
 tidak bisa diwakili counting per-klien sederhana.
 
-### D7. `scale_pos_weight` = 1,0 — dipilih meski bukan yang ber-AUC tertinggi
+### D7. `scale_pos_weight` = 1,0 - dipilih meski bukan yang ber-AUC tertinggi
 
 **Hasil eksperimen** (B2, validation, fraud rate aktual 3,43%):
 
@@ -249,7 +249,7 @@ tumbuh pun berbeda. Hasilnya `spw=5` menaikkan AUC +1,28 pp dan KS +4,13 pp.
 
 1. **Kalibrasi.** ECE naik 7x pada `spw=5` (0,0049 -> 0,0360) dan 26x pada
    `spw=27,6` (0,1260). Rata-rata prediksi `spw=27,6` adalah 0,160 versus fraud
-   rate aktual 0,034 — model over-predict hampir 5x. Fase 5 membutuhkan
+   rate aktual 0,034 - model over-predict hampir 5x. Fase 5 membutuhkan
    probabilitas bermakna untuk cost-based threshold; skor yang hanya benar secara
    ranking tidak cukup untuk menghitung ekspektasi kerugian dalam rupiah.
 2. **Konsistensi lintas fase.** Baseline resmi harus sama di semua eksperimen agar
@@ -260,7 +260,7 @@ tumbuh pun berbeda. Hasilnya `spw=5` menaikkan AUC +1,28 pp dan KS +4,13 pp.
 **Catatan untuk Fase 5.** Kenaikan AUC dari `spw=5` cukup besar untuk ditinjau
 ulang setelah kalibrasi isotonic diimplementasikan. Kalau isotonic memulihkan ECE
 tanpa menurunkan ranking, kombinasi `spw=5` + isotonic layak dipertimbangkan
-sebagai model produksi — tapi keputusan itu harus diambil SETELAH ablation graph
+sebagai model produksi - tapi keputusan itu harus diambil SETELAH ablation graph
 selesai, bukan sebelumnya, dan diterapkan seragam ke semua varian model.
 
 ### D8. Anti-leakage pada feature engineering
@@ -288,12 +288,12 @@ kolom-kolom itu ikut di-encode dan versi mentahnya dikecualikan dari blok fitur.
 ### D9. Test set masih belum disentuh
 
 Seluruh angka Fase 2 berasal dari validation. Kolom `test_*` di
-`artifacts/experiments.csv` masih kosong untuk semua baris — audit trail bahwa
+`artifacts/experiments.csv` masih kosong untuk semua baris - audit trail bahwa
 test set out-of-time belum pernah dibuka.
 
 ---
 
-## Fase 3 — Graph Construction & Features
+## Fase 3 - Graph Construction & Features
 
 ### D10. Node graph: 7 kolom, lima kolom sengaja dibuang
 
@@ -301,7 +301,7 @@ Node atribut: `card1`, `addr1`, `DeviceInfo`, `P_emaildomain`, `R_emaildomain`,
 `id_30`, `id_31`. Graph akhir: 590.540 x 15.995, nnz 2.085.262 (density 2,2e-04).
 
 `card3`, `card4`, `card6`, `addr2`, `DeviceType` dikecualikan karena satu nilai
-menampung 65-88% baris (T3) — sebagai node mereka akan menghubungkan hampir semua
+menampung 65-88% baris (T3) - sebagai node mereka akan menghubungkan hampir semua
 transaksi tanpa membawa informasi.
 
 Missing value TIDAK dijadikan node. Menyatukan 79,9% transaksi tanpa `DeviceInfo`
@@ -310,12 +310,12 @@ ke satu node akan menciptakan hub palsu raksasa yang tidak punya makna bisnis.
 ### D11. Adjacency 590K x 590K tidak pernah dimaterialisasi
 
 Estimasi nnz `A @ A.T` adalah **89,5 miliar**, dengan `P_emaildomain` menyumbang
-66,8 miliar sendirian. Semua agregasi memakai `A @ (A.T @ v)` — biayanya linier
+66,8 miliar sendirian. Semua agregasi memakai `A @ (A.T @ v)` - biayanya linier
 terhadap nnz(A) = 2,08 juta. Urutan kurung ini wajib; `(A @ A.T) @ v` akan
 mencoba membentuk matriks penuh.
 
 `test_neighbor_sum_equals_dense_adjacency_result` membuktikan trik ini menghasilkan
-angka yang identik dengan perhitungan dense pada toy graph — bukan sekadar lebih
+angka yang identik dengan perhitungan dense pada toy graph - bukan sekadar lebih
 cepat, tapi benar.
 
 ### D12. Hub cap 5.000 untuk propagasi tetangga
@@ -325,7 +325,7 @@ dipakai sebagai fitur degree**. 69 node terkena, termasuk `gmail.com` dengan
 228.355 transaksi (38,7% data).
 
 Alasan: "berbagi gmail" bukan sinyal fraud. Kalau ikut dipropagasikan, setiap
-transaksi gmail menjadi tetangga setiap transaksi gmail lain — noise yang
+transaksi gmail menjadi tetangga setiap transaksi gmail lain - noise yang
 menenggelamkan sinyal dari atribut spesifik seperti device atau kartu.
 
 ### D13. `graph_component_id` dibuang dari output
@@ -335,11 +335,11 @@ akan memperlakukan jarak antar-ID sebagai bermakna padahal tidak. Hanya
 `graph_component_size` yang informatif. Ditemukan saat inspeksi distribusi, dan
 sekarang dijaga oleh `test_component_id_is_not_exposed_as_feature`.
 
-### D14. Level 3 — leave-one-out secara sparse
+### D14. Level 3 - leave-one-out secara sparse
 
 **Formula.** Agregasi `A @ (A.T @ v)` menyertakan transaksi itu sendiri sebagai
 tetangganya. Bobot kontribusi diri adalah diagonal `(A @ A.T)[i,i] = sum_j A[i,j]^2`,
-yang untuk A biner sama dengan jumlah atribut yang dimiliki i — dihitung tanpa
+yang untuk A biner sama dengan jumlah atribut yang dimiliki i - dihitung tanpa
 membentuk matriksnya:
 
 ```
@@ -348,7 +348,7 @@ loo_labeled  = A @ (A.T @ mask)     - self_weight * mask
 ```
 
 Untuk baris di dalam mask, kontribusi dirinya hilang tepat. Untuk baris di luar
-mask, pengurangannya nol — benar, karena labelnya tidak pernah ikut sejak awal.
+mask, pengurangannya nol - benar, karena labelnya tidak pernah ikut sejak awal.
 Diverifikasi terhadap perhitungan dense dengan diagonal di-nol-kan.
 
 **Smoothing.** `rate = (pos + alpha*prior) / (labeled + alpha)` dengan alpha = 20
@@ -363,7 +363,7 @@ lemah dari yang bisa dicapai. Dicatat sebagai trade-off sadar, bukan kelalaian.
 
 **Verifikasi pada data nyata.** Membalik SELURUH label val+test pada 590.540 baris
 menghasilkan fitur Level 3 yang **identik bit-per-bit**. Ini bukan hanya test unit
-pada toy graph — dijalankan pada dataset penuh.
+pada toy graph - dijalankan pada dataset penuh.
 
 **Limitasi 2-hop yang harus dinyatakan.** Koreksi LOO pada 2-hop tidak seeksak
 1-hop: jalur bolak-balik (i -> j -> i) tetap tersisa dalam bentuk tak-langsung
@@ -384,7 +384,7 @@ AUC univariat per split:
 | `graph_community_fraud_rate` | 0,5823 | 0,6487 | 0,6753 | **-0,0664** |
 
 Gap besar pada `uid_fraud_rate` awalnya tampak seperti gejala menghafal label.
-Investigasi menunjukkan sebaliknya — penyebabnya **coverage**, bukan leakage:
+Investigasi menunjukkan sebaliknya - penyebabnya **coverage**, bukan leakage:
 
 | Split | Baris tanpa tetangga UID berlabel | AUC pada baris yang PUNYA tetangga |
 |---|---|---|
@@ -393,18 +393,18 @@ Investigasi menunjukkan sebaliknya — penyebabnya **coverage**, bukan leakage:
 | test | **67,3%** | **0,9751** |
 
 Pada baris yang benar-benar punya tetangga UID berlabel, AUC test (0,975) bahkan
-sedikit lebih tinggi dari train (0,973) — tidak ada tanda menghafal sama sekali.
+sedikit lebih tinggi dari train (0,973) - tidak ada tanda menghafal sama sekali.
 Penurunan AUC agregat murni karena dua pertiga baris test jatuh ke prior yang
 konstan, sehingga tidak membawa informasi apa pun.
 
 Ini konsisten dengan temuan T4: coverage UID train->test hanya 33,9% baris. Karena
-itu `uid_labeled_count` disertakan sebagai fitur — model perlu tahu kapan
+itu `uid_labeled_count` disertakan sebagai fitur - model perlu tahu kapan
 `uid_fraud_rate` layak dipercaya dan kapan ia hanya prior.
 
 `graph_community_fraud_rate` justru punya gap NEGATIF (performa val/test lebih
 baik dari train), yang menyingkirkan kecurigaan leakage untuk fitur itu.
 
-### T7. Fitur Level 3 vs C-features — bukti untuk artikel
+### T7. Fitur Level 3 vs C-features - bukti untuk artikel
 
 Korelasi Spearman pada periode training:
 
@@ -425,14 +425,14 @@ berkorelasi 0,46 dengan degree UID. Yang terjadi:
 1. **C13 memang berkorelasi kuat, tapi dengan `uid_fraud_rate` (-0,461), bukan
    dengan fitur bipartite (-0,220).** Ini justru mempertajam kesimpulan Fase 2:
    C13 meng-encode sesuatu di level KLIEN, bukan level atribut bersama. Korelasi
-   negatif berarti C13 tinggi menyertai fraud rate klien yang rendah — arah yang
+   negatif berarti C13 tinggi menyertai fraud rate klien yang rendah - arah yang
    berlawanan, tapi kekuatan hubungannya nyata.
 
 2. **Blok C4/C7/C8/C10/C12 berkorelasi 0,36-0,49 dengan fitur graph berbasis
    label.** Ini kelompok C yang perilakunya paling mirip neighbor fraud rate.
 
 3. **Tidak ada korelasi yang mendekati 0,8+.** Artinya C-features TIDAK menduplikasi
-   fitur graph — mereka menangkap sinyal yang beririsan tapi berbeda. Ini kabar
+   fitur graph - mereka menangkap sinyal yang beririsan tapi berbeda. Ini kabar
    baik untuk ablation: masih ada ruang bagi graph features untuk menambah
    informasi di atas B2.
 
@@ -444,7 +444,7 @@ Ablation Fase 4 akan mengukur berapa banyak sisa informasi yang benar-benar baru
 
 ---
 
-## Fase 4a — Ablation Study: Graph Features Menurunkan Performa
+## Fase 4a - Ablation Study: Graph Features Menurunkan Performa
 
 **Ringkasan: fitur graph BERBASIS LABEL (Level 3) memperburuk performa
 out-of-time secara serius, sementara fitur graph STRUKTURAL (Level 1-2) justru
@@ -452,14 +452,14 @@ memberi lift substansial di validation (+2,30 pp AUC). Karena keduanya diuji
 bersama di test, model bergraf terbaik yang terukur out-of-time tetap kalah dari
 baseline murni.**
 
-Dari empat model yang dievaluasi di test, yang terbaik adalah M3 — baseline tanpa
+Dari empat model yang dievaluasi di test, yang terbaik adalah M3 - baseline tanpa
 graph. Tetapi dekomposisi di bagian 2 menunjukkan itu bukan karena graph tidak
 berguna, melainkan karena Level 3 menenggelamkan kontribusi Level 1-2.
 
 Hasil negatif ini dilaporkan apa adanya sesuai aturan proyek, termasuk fakta bahwa
 kombinasi terbaik (B2 + Level 1-2 saja) tidak sempat terverifikasi di test.
 
-### 1. Tabel hasil — test set out-of-time (hari 151-181)
+### 1. Tabel hasil - test set out-of-time (hari 151-181)
 
 Test set dibuka SEKALI untuk keempat model, setelah konfigurasi dikunci.
 Audit trail: `artifacts/experiments.csv` punya tepat 4 baris dengan `test_auc`
@@ -493,7 +493,7 @@ lebih kecil ketika C-features hadir** (-1,91 pp) dibanding ketika tidak ada
 entity-level yang stabil lebih sedikit bergantung pada fitur graph yang rapuh.
 
 Catatan: "Nilai C" di test (+0,85 pp AUC) lebih kecil daripada di validation
-(+1,49 pp, Fase 2) — konsisten dengan drift yang sudah terdokumentasi.
+(+1,49 pp, Fase 2) - konsisten dengan drift yang sudah terdokumentasi.
 
 ### 2. Dekomposisi: Level 1-2 vs Level 3
 
@@ -502,12 +502,12 @@ identik) memisahkan kontribusi kedua level:
 
 | Feature set | n fitur | VAL AUC | VAL KS | vs B2 |
 |---|---|---|---|---|
-| B2 (baseline) | 447 | 0,9031 | 0,6435 | — |
+| B2 (baseline) | 447 | 0,9031 | 0,6435 | - |
 | **B2 + Level 1-2 saja** | 473 | **0,9261** | **0,7096** | **+2,30 pp / +6,61 pp** |
 | B2 + Level 3 saja | 453 | 0,9067 | 0,6557 | +0,36 pp / +1,22 pp |
 | B2 + semua (M4) | 479 | 0,9081 | 0,6630 | +0,50 pp / +1,95 pp |
 
-**Level 1-2 sendirian adalah feature set terbaik di validation** — lebih baik
+**Level 1-2 sendirian adalah feature set terbaik di validation** - lebih baik
 daripada menambahkan seluruh fitur graph. Menambahkan Level 3 ke B2+L12 justru
 MENURUNKAN AUC dari 0,9261 ke 0,9081 (-1,80 pp).
 
@@ -517,11 +517,11 @@ struktural (Level 1-2) memberi lift substansial, sementara fitur berbasis label
 
 **Keterbatasan yang harus dinyatakan.** Angka B2+L12 di atas adalah VALIDATION.
 Test set sudah dibuka untuk empat model terkunci dan tidak boleh dibuka lagi untuk
-kombinasi baru — itu akan mengubah test menjadi alat seleksi. Karena itu:
+kombinasi baru - itu akan mengubah test menjadi alat seleksi. Karena itu:
 
 - Lift Level 1-2 sebesar +2,30 pp AUC **belum terverifikasi out-of-time**.
 - Diagnostik drift (bagian 3b) menunjukkan fitur Level 1-2 sangat stabil kecuali
-  `uid_size` (+250%), sehingga lift ini kemungkinan bertahan — tapi itu dugaan,
+  `uid_size` (+250%), sehingga lift ini kemungkinan bertahan - tapi itu dugaan,
   bukan hasil terukur.
 - Verifikasi yang benar memerlukan test set periode baru, atau dinyatakan sebagai
   hipotesis untuk pekerjaan lanjutan.
@@ -556,12 +556,12 @@ Fitur graph/uid di top 20: **7 dari 20**.
 
 **Keputusan 2-hop: DIPERTAHANKAN.** Kriteria gugur ditetapkan sebelum angka
 dilihat (mean|SHAP| < 20% dari 1-hop, atau rank > 50). Hasilnya rank 2 dengan
-98,5% dari 1-hop — jauh melewati ambang. Menggugurkan 2-hop bukan solusi atas
+98,5% dari 1-hop - jauh melewati ambang. Menggugurkan 2-hop bukan solusi atas
 masalah ini, karena 1-hop pun sama bermasalahnya.
 
 **Inti dekomposisinya:** jarak SHAP antara fitur Level 3 (0,029-0,036) dan fitur
 non-graph terbaik (V244, 0,015) adalah 2-2,5 kali. Model tidak sekadar memakai
-fitur Level 3 — ia menggantungkan sebagian besar keputusannya pada empat fitur
+fitur Level 3 - ia menggantungkan sebagian besar keputusannya pada empat fitur
 tersebut, lalu performanya runtuh di periode berikutnya.
 
 ### 3. Root cause analysis
@@ -569,7 +569,7 @@ tersebut, lalu performanya runtuh di periode berikutnya.
 Ada DUA mekanisme berbeda, keduanya lolos dari test anti-leakage karena keduanya
 bukan leakage label.
 
-#### 3a. Coverage collapse — bukti melemah, model tidak tahu
+#### 3a. Coverage collapse - bukti melemah, model tidak tahu
 
 `uid_labeled_count` = jumlah tetangga UID berlabel setelah leave-one-out:
 
@@ -584,7 +584,7 @@ Turun 52% dari train ke test. Konsekuensinya berlapis:
 - Di training, model belajar bahwa `uid_fraud_rate` layak dipercaya karena
   rata-rata didukung 6 tetangga berlabel.
 - Di test, dua pertiga baris tidak punya tetangga berlabel sama sekali, sehingga
-  `uid_fraud_rate` = prior konstan 0,03512 — **tidak membawa informasi apa pun**.
+  `uid_fraud_rate` = prior konstan 0,03512 - **tidak membawa informasi apa pun**.
 - Model tetap memberi bobot besar pada fitur itu, karena selama training fitur
   tersebut memang sangat prediktif.
 
@@ -593,7 +593,7 @@ adalah kekuatan buktinya, bukan nilainya. Inilah sebabnya pengecekan drift biasa
 (membandingkan mean/PSI fitur) TIDAK akan menangkap masalah ini.
 
 Bukti bahwa fiturnya sendiri tidak bocor: pada baris yang benar-benar punya
-tetangga UID berlabel, AUC test 0,9751 versus train 0,9725 (T6) — sedikit lebih
+tetangga UID berlabel, AUC test 0,9751 versus train 0,9725 (T6) - sedikit lebih
 BAIK di test. Fitur ini valid; yang gagal adalah ketersediaannya.
 
 #### 3b. `uid_size` dihitung atas seluruh periode
@@ -610,14 +610,14 @@ SETELAH periode training:
 | Hanya periode training | 2,87 |
 
 Drift +250,8% dari train (8,48) ke test (29,79). Contoh paling ekstrem: UID 158745
-punya 1.414 transaksi, **1.393 di antaranya di test dan 0 di train** — entitas yang
+punya 1.414 transaksi, **1.393 di antaranya di test dan 0 di train** - entitas yang
 praktis tidak eksis saat model dilatih, tapi muncul sebagai klien raksasa di test.
 
 Ini bukan leakage label (tidak ada `isFraud` yang tersentuh), dan CLAUDE.md memang
 mengizinkan graph dibangun dari seluruh data. Tapi untuk fitur AGREGASI, "struktur
 dari seluruh data" ternyata tetap menciptakan pergeseran distribusi yang parah.
-Aturan yang benar seharusnya: **statistik agregasi apa pun — termasuk yang tidak
-menyentuh label — harus dihitung dari periode training saja.**
+Aturan yang benar seharusnya: **statistik agregasi apa pun - termasuk yang tidak
+menyentuh label - harus dihitung dari periode training saja.**
 
 Fitur Level 1-2 lain yang murni struktural justru sangat stabil:
 
@@ -626,7 +626,7 @@ Fitur Level 1-2 lain yang murni struktural justru sangat stabil:
 | `graph_deg_card1` | 2511,5 | 2572,9 | +2,4% |
 | `graph_two_hop_count` | 1707,7 | 1841,1 | +7,8% |
 | `graph_component_size` | 421400 | 420077 | -0,3% |
-| `graph_pagerank` | — | — | +0,6% |
+| `graph_pagerank` | - | - | +0,6% |
 | **`uid_size`** | **8,48** | **29,79** | **+250,8%** |
 
 Jadi masalahnya bukan "fitur graph" secara umum, melainkan spesifik pada fitur
@@ -635,7 +635,7 @@ yang bergantung pada agregasi lintas waktu.
 #### 3c. Kenapa model over-relies pada fitur yang justru degradasi
 
 Gradient boosting memilih split yang paling menurunkan loss DI DATA TRAINING.
-Fitur Level 3 di periode training punya AUC univariat 0,81-0,90 — jauh mengalahkan
+Fitur Level 3 di periode training punya AUC univariat 0,81-0,90 - jauh mengalahkan
 fitur terbaik lainnya. Model rasional memberinya bobot besar.
 
 Early stopping tidak menyelamatkan, karena validation (hari 126-150) hanya
@@ -647,12 +647,12 @@ Ini pola yang secara struktural sama dengan overfitting, tapi mekanismenya
 berbeda: bukan menghafal noise, melainkan **mengandalkan fitur yang kualitasnya
 meluruh seiring waktu**.
 
-### 4. Implikasi metodologis — apa yang terjadi kalau split-nya random
+### 4. Implikasi metodologis - apa yang terjadi kalau split-nya random
 
 Prediksi eksplisit, dicatat sebagai klaim yang bisa diuji siapa pun:
 
 Dengan random split (atau StratifiedKFold biasa), lift fitur Level 3 akan
-**positif dan besar** — perkiraan +3 sampai +8 pp AUC, dengan Level 3 mendominasi
+**positif dan besar** - perkiraan +3 sampai +8 pp AUC, dengan Level 3 mendominasi
 feature importance persis seperti yang terlihat di SHAP. Dengan temporal split,
 lift yang sama menjadi negatif.
 
@@ -670,7 +670,7 @@ Alasannya langsung mengikuti root cause di atas:
    yang dipakai. Secara teknis benar, tapi hasilnya tetap menyesatkan.
 
 Inilah bagian yang paling layak ditulis: **implementasi Level 3 di project ini
-lolos setiap pengecekan leakage yang biasa dilakukan** — label_mask wajib,
+lolos setiap pengecekan leakage yang biasa dilakukan** - label_mask wajib,
 leave-one-out terverifikasi terhadap perhitungan dense, membalik seluruh label
 val+test pada 590K baris menghasilkan output identik bit-per-bit. Semua benar.
 Yang membuat hasilnya jujur bukan test-test itu, melainkan **temporal split**.
@@ -682,7 +682,7 @@ besar" kemungkinan berada dalam kondisi ini: kodenya benar, validasinya yang sal
 
 Kalau sistem ini di-deploy, berikut klasifikasi fiturnya.
 
-**Aman dipakai — struktural, drift < 10%:**
+**Aman dipakai - struktural, drift < 10%:**
 
 | Fitur | Drift | Catatan |
 |---|---|---|
@@ -690,7 +690,7 @@ Kalau sistem ini di-deploy, berikut klasifikasi fiturnya.
 | `graph_two_hop_count` | +7,8% | Ukuran lingkungan |
 | `graph_component_size` | -0,3% | Sangat stabil |
 | `graph_pagerank` | +0,6% | Sangat stabil |
-| `graph_attr_entropy`, `graph_max_kcore` | — | Murni struktural |
+| `graph_attr_entropy`, `graph_max_kcore` | - | Murni struktural |
 
 Fitur-fitur ini boleh dipakai tanpa perlakuan khusus, dan diagnostik dekomposisi
 menunjukkan mereka MEMBERI lift (+2,30 pp AUC di validation). Limitasi yang harus
@@ -698,7 +698,7 @@ disertakan: angka itu belum terverifikasi out-of-time karena test set sudah
 dikunci. Rekomendasi konkret untuk deployment: latih ulang dengan feature set
 B2 + Level 1-2, lalu validasi pada periode baru sebelum produksi.
 
-**Butuh monitoring ketat — jangan dipakai tanpa pengaman:**
+**Butuh monitoring ketat - jangan dipakai tanpa pengaman:**
 
 | Fitur | Risiko | Pengaman wajib |
 |---|---|---|
@@ -720,24 +720,24 @@ B2 + Level 1-2, lalu validasi pada periode baru sebelum produksi.
 ### 6. Framing untuk artikel
 
 **Ini bukan kegagalan graph features. Ini demonstrasi bahwa temporal validation
-memisahkan fitur graph yang benar-benar berguna dari yang hanya tampak berguna —
+memisahkan fitur graph yang benar-benar berguna dari yang hanya tampak berguna -
 pemisahan yang tidak bisa dilakukan oleh pengecekan leakage mana pun.**
 
 Alur artikel yang paling kuat:
 
-1. **Setup**: pertanyaan yang wajar — berapa nilai tambah graph features di atas
+1. **Setup**: pertanyaan yang wajar - berapa nilai tambah graph features di atas
    baseline tabular yang kuat?
 2. **Implementasi yang benar**: bipartite sparse tanpa materialisasi adjacency
    89,5 miliar nnz, leave-one-out terverifikasi terhadap perhitungan dense,
    label_mask wajib, membalik seluruh label val+test menghasilkan output identik.
-3. **Twist**: SHAP menunjukkan model mencintai fitur berbasis label — 68% total
+3. **Twist**: SHAP menunjukkan model mencintai fitur berbasis label - 68% total
    kontribusi, empat peringkat teratas. Semua tanda menunjukkan keberhasilan besar.
 4. **Kenyataan**: di test out-of-time, AUC turun 1,91 pp (dengan C) dan 8,23 pp
    (tanpa C). Model terbaik dari empat yang diuji adalah yang tidak memakai graph.
 5. **Pembalikan kedua**: dekomposisi menunjukkan fitur graph STRUKTURAL sebenarnya
-   memberi +2,30 pp AUC. Yang merusak hanya fitur berbasis label — dan ia menyeret
+   memberi +2,30 pp AUC. Yang merusak hanya fitur berbasis label - dan ia menyeret
    yang baik turun bersamanya.
-6. **Diagnosis**: dua mekanisme — coverage collapse (`uid_labeled_count` -52%) dan
+6. **Diagnosis**: dua mekanisme - coverage collapse (`uid_labeled_count` -52%) dan
    agregasi lintas periode (`uid_size` +250%). Keduanya bukan leakage label, dan
    keduanya tak terlihat oleh drift check standar yang hanya memantau nilai fitur.
 7. **Pelajaran**: dengan random split, Level 3 akan tampak sebagai kemenangan
@@ -745,7 +745,7 @@ Alur artikel yang paling kuat:
    sama, kesimpulan yang berlawanan.
 
 Judul yang diusulkan: *"Fitur graph terbaik saya ternyata yang paling
-membosankan"* — degree dan component size menang, neighbor fraud rate kalah.
+membosankan"* - degree dan component size menang, neighbor fraud rate kalah.
 
 Nilai portofolio dari hasil ini lebih tinggi daripada lift positif sederhana:
 hampir semua orang bisa menghasilkan angka bagus dengan random split. Yang
@@ -755,7 +755,7 @@ terbaik belum sempat diverifikasi karena disiplin test-sekali-pakai.
 
 ### 7. Keputusan lanjutan
 
-**Model utama untuk Fase 5 adalah M3 (`lgbm_baseline_full`)** — baseline tanpa
+**Model utama untuk Fase 5 adalah M3 (`lgbm_baseline_full`)** - baseline tanpa
 graph, AUC test 0,9007 / KS 0,6471. Ini satu-satunya model dengan performa
 out-of-time terukur yang terbaik, dan Fase 5 (scorecard, PSI, kalibrasi,
 cost-based threshold) dibangun di atasnya.
@@ -763,7 +763,7 @@ cost-based threshold) dibangun di atasnya.
 Analisis graph disimpan sebagai temuan riset. Dua hal yang dibawa ke laporan akhir:
 
 1. Fitur graph struktural (Level 1-2) menunjukkan lift +2,30 pp AUC di validation,
-   **belum terverifikasi out-of-time** — kandidat terkuat untuk pekerjaan lanjutan.
+   **belum terverifikasi out-of-time** - kandidat terkuat untuk pekerjaan lanjutan.
 2. Fitur graph berbasis label (Level 3) terbukti merusak generalisasi temporal
    meski implementasinya lolos setiap pengecekan leakage.
 
@@ -773,10 +773,10 @@ test dibuka, dan tidak dipakai untuk mengubah model mana pun.
 
 ---
 
-## Fase 5 — Evaluasi Risk-Style & Framing Bisnis
+## Fase 5 - Evaluasi Risk-Style & Framing Bisnis
 
 Model: M3 (`lgbm_baseline_full`, backend XGBoost, spw=1,0). Dilatih ulang dengan
-konfigurasi identik dan **mereproduksi AUC test 0,9007 persis** — konfirmasi bahwa
+konfigurasi identik dan **mereproduksi AUC test 0,9007 persis** - konfirmasi bahwa
 pipeline deterministik dan angka Fase 4 dapat direplikasi.
 
 ### D15. Scorecard 300-850, PDO 20
@@ -786,7 +786,7 @@ per satuan log-odds. Diverifikasi lewat test: odds berlipat dua menghasilkan
 selisih tepat 20,00 poin.
 
 Pemisahan pada test out-of-time: **skor rata-rata fraud 514 versus non-fraud 626**
-— selisih 112 poin, setara lebih dari 5 kali PDO.
+- selisih 112 poin, setara lebih dari 5 kali PDO.
 
 Tabel band (test, 89.326 transaksi):
 
@@ -801,11 +801,11 @@ Tabel band (test, 89.326 transaksi):
 | 9 (terbaik) | 672-762 | 10% | 0,18% | 100% |
 
 Band terburuk (10% populasi) menampung 69,4% seluruh fraud dengan fraud rate 24,2%
-— tujuh kali fraud rate keseluruhan. Band terbaik hanya 0,18%, yaitu 134 kali lebih
+- tujuh kali fraud rate keseluruhan. Band terbaik hanya 0,18%, yaitu 134 kali lebih
 aman. Ini bentuk yang langsung bisa dipakai tim risk untuk menetapkan kebijakan
 per-band.
 
-### D16. Cost-based threshold — alat, bukan satu angka
+### D16. Cost-based threshold - alat, bukan satu angka
 
 Asumsi yang dinyatakan:
 - **Biaya false negative** = `TransactionAmt` transaksi itu sendiri (kerugian
@@ -837,7 +837,7 @@ pelanggan yang salah ditolak, dan biaya tetap operasional tim review.
 
 ### D17. PSI skor sangat stabil, tapi CSI menemukan masalah lain
 
-**PSI skor train -> test = 0,0032** — jauh di bawah ambang 0,10, kategori "stabil".
+**PSI skor train -> test = 0,0032** - jauh di bawah ambang 0,10, kategori "stabil".
 Distribusi skor model praktis tidak bergeser antar periode.
 
 Tapi CSI per fitur menemukan sesuatu yang PSI skor tidak tunjukkan:
@@ -848,11 +848,11 @@ Tapi CSI per fitur menemukan sesuatu yang PSI skor tidak tunjukkan:
 | `le_M9` | 0,3360 | bermasalah | 67,1% | 38,6% |
 | `le_M7` | 0,3360 | bermasalah | 67,1% | 38,6% |
 | `le_M3` | 0,2833 | bermasalah | 54,0% | 28,1% |
-| sisanya | < 0,023 | stabil | — | — |
+| sisanya | < 0,023 | stabil | - | - |
 
 Nilai CSI M7/M8/M9 identik persis karena ketiganya berbagi pola missing yang sama
 (M8 dan M9 identik; M7 hampir identik). **Pergeserannya adalah pergeseran
-MISSINGNESS, bukan pergeseran nilai** — Vesta mulai mengisi kolom M di paruh kedua
+MISSINGNESS, bukan pergeseran nilai** - Vesta mulai mengisi kolom M di paruh kedua
 periode, dari 67% kosong menjadi 39% kosong.
 
 Implikasi: keempat fitur ini berubah makna antar periode. Nilai "-1" (missing)
@@ -877,22 +877,22 @@ AUC 0,9007 -> 0,9000 (isotonic monoton, ranking praktis tak berubah).
 
 **Isotonic memperburuk ECE.** Penyebabnya bukan bug melainkan drift:
 
-- Model spw=1 sudah nyaris terkalibrasi sempurna di test — bias hanya -0,00037,
+- Model spw=1 sudah nyaris terkalibrasi sempurna di test - bias hanya -0,00037,
   yaitu 1% dari fraud rate.
 - Isotonic di-fit pada **validation** yang fraud rate-nya 0,03426, lalu diterapkan
   ke **test** yang fraud rate-nya 0,03486.
 - Kalibrator mewarisi level validation, menaikkan mean prediksi ke 0,03839 dan
-  membuat bias menjadi +0,00353 — sepuluh kali lebih buruk.
+  membuat bias menjadi +0,00353 - sepuluh kali lebih buruk.
 
 Jadi kalibrator MENGIMPOR drift val->test. Ini konsekuensi langsung dari drift
 fraud rate yang terdokumentasi di T1 (rentang mingguan 2,07%-5,07%).
 
 **Keputusan: tidak memakai kalibrasi isotonic pada model final.** Model raw sudah
-lebih baik. Kalibrasi baru berguna kalau model memang tidak terkalibrasi — dan
+lebih baik. Kalibrasi baru berguna kalau model memang tidak terkalibrasi - dan
 `scale_pos_weight=1,0` yang dipilih di Fase 2 justru dipilih karena alasan itu.
 Keputusan D7 terbukti benar dua fase kemudian.
 
-### D19. Peninjauan `scale_pos_weight` — spw=5 + isotonic menang di validation
+### D19. Peninjauan `scale_pos_weight` - spw=5 + isotonic menang di validation
 
 Dievaluasi pada paruh kedua validation; isotonic di-fit pada paruh pertama supaya
 tidak menilai dirinya sendiri.
@@ -914,10 +914,10 @@ teknis:
 
 1. Angka di atas adalah **validation**. Memilih spw=5 berdasarkan validation lalu
    mengevaluasinya di test akan menjadi pembukaan test set kedua untuk model yang
-   dipilih berdasarkan hasil — persis yang dilarang.
+   dipilih berdasarkan hasil - persis yang dilarang.
 2. Satu-satunya model dengan angka out-of-time yang sah adalah spw=1 (M3).
 3. Ironi yang perlu dicatat: keunggulan spw=5 justru pada kalibrasi setelah
-   isotonic — padahal D18 menunjukkan isotonic mengimpor drift val->test. Belum
+   isotonic - padahal D18 menunjukkan isotonic mengimpor drift val->test. Belum
    tentu keunggulan itu bertahan di OOT.
 
 **Status: temuan terverifikasi di validation, belum terukur out-of-time.** Sama
@@ -928,7 +928,7 @@ utama untuk pekerjaan lanjutan dengan periode data baru.
 
 | Aspek | Nilai |
 |---|---|
-| Model | M3 — XGBoost, 447 fitur, tanpa graph, spw=1,0 |
+| Model | M3 - XGBoost, 447 fitur, tanpa graph, spw=1,0 |
 | AUC test OOT | 0,9007 |
 | KS test OOT | 0,6471 |
 | PR-AUC test OOT | 0,5196 |

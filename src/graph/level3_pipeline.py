@@ -1,7 +1,7 @@
 """Bangun fitur Level 3 (berbasis label) dan simpan ke parquet.
 
 label_mask SELALU = is_train, untuk seluruh baris. Fitur pada baris test dihitung
-dari label training, bukan train+val — pilihan konservatif yang disengaja.
+dari label training, bukan train+val - pilihan konservatif yang disengaja.
 """
 
 from __future__ import annotations
@@ -55,7 +55,7 @@ def correlation_with_c_features(features: pd.DataFrame) -> pd.DataFrame:
 
     Fase 2 menemukan C13 berkorelasi 0,46 dengan degree UID. Kalau
     graph_nb_fraud_rate_1hop juga berkorelasi tinggi dengan C13, itu bukti
-    tambahan bahwa Vesta sudah meng-encode sinyal bertipe jaringan — temuan yang
+    tambahan bahwa Vesta sudah meng-encode sinyal bertipe jaringan - temuan yang
     menentukan interpretasi ablation Fase 4.
 
     Korelasi dihitung pada PERIODE TRAINING saja, agar konsisten dengan

@@ -1,6 +1,6 @@
 """Ablation study Fase 4a: mengukur nilai tambah graph features.
 
-URUTAN YANG MENGIKAT — dirancang supaya test set tidak menjadi alat seleksi:
+URUTAN YANG MENGIKAT - dirancang supaya test set tidak menjadi alat seleksi:
 
   1. Latih 4 model, evaluasi HANYA di validation
   2. SHAP pada M4 di validation -> putuskan nasib 2-hop
@@ -140,7 +140,7 @@ def run(shap_sample: int = SHAP_SAMPLE):
 
 
 def open_test_set(matrix, masks, y, results, excluded, notes: str):
-    """TAHAP 4: buka test set — SEKALI, untuk keempat model sekaligus."""
+    """TAHAP 4: buka test set - SEKALI, untuk keempat model sekaligus."""
     print("\n" + "=" * 78)
     print("TAHAP 4: MEMBUKA TEST SET OUT-OF-TIME. Config sudah dikunci.")
     print("=" * 78)

@@ -1,4 +1,4 @@
-"""PSI dan CSI — metrik monitoring wajib di credit scoring.
+"""PSI dan CSI - metrik monitoring wajib di credit scoring.
 
 PSI (Population Stability Index) mengukur pergeseran distribusi SKOR antar periode.
 CSI (Characteristic Stability Index) memakai rumus yang sama pada FITUR individual,
@@ -8,7 +8,7 @@ Ambang industri: < 0,10 stabil | 0,10-0,25 perlu perhatian | > 0,25 bermasalah.
 
 KETERBATASAN PENTING (dibuktikan di Fase 4): PSI hanya melihat NILAI fitur. Fitur
 berbasis label di project ini punya nilai yang stabil (drift -2,8%) sementara
-kekuatan buktinya runtuh 52% — PSI tidak akan menangkap kegagalan seperti itu.
+kekuatan buktinya runtuh 52% - PSI tidak akan menangkap kegagalan seperti itu.
 Untuk fitur berbasis entitas, pantau juga jumlah observasi pendukungnya.
 """
 
@@ -54,7 +54,7 @@ def psi_verdict(psi: float, stable: float = 0.10, warning: float = 0.25) -> str:
 
 
 def psi_detail(expected: np.ndarray, actual: np.ndarray, n_bins: int = 10) -> pd.DataFrame:
-    """Rincian PSI per bin — menunjukkan di bagian distribusi mana pergeserannya."""
+    """Rincian PSI per bin - menunjukkan di bagian distribusi mana pergeserannya."""
     expected = np.asarray(expected, dtype=np.float64)
     actual = np.asarray(actual, dtype=np.float64)
     edges = np.unique(np.quantile(expected, np.linspace(0, 1, n_bins + 1)))

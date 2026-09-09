@@ -32,7 +32,7 @@ def expected_calibration_error(y_true: np.ndarray, y_prob: np.ndarray, n_bins: i
 
 
 def brier_score(y_true: np.ndarray, y_prob: np.ndarray) -> float:
-    """Mean squared error probabilitas — menggabungkan kalibrasi dan ketajaman."""
+    """Mean squared error probabilitas - menggabungkan kalibrasi dan ketajaman."""
     return float(np.mean((np.asarray(y_prob) - np.asarray(y_true)) ** 2))
 
 

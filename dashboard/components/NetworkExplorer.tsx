@@ -2,16 +2,19 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Plot from "./Plot";
-import { Callout, Card, Stat, pct } from "./ui";
+import { Callout, Card, LoadError, Stat, fetchJson, pct } from "./ui";
 import { NORD, plotConfig, plotLayout } from "@/lib/theme";
 import type { Subgraph } from "@/lib/types";
 
 export default function NetworkExplorer() {
   const [subgraphs, setSubgraphs] = useState<Subgraph[] | null>(null);
   const [selected, setSelected] = useState(0);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("data/subgraphs.json").then((r) => r.json()).then(setSubgraphs);
+    fetchJson<Subgraph[]>("subgraphs.json")
+      .then(setSubgraphs)
+      .catch((e: Error) => setError(e.message));
   }, []);
 
   const traces = useMemo(() => {
@@ -19,7 +22,7 @@ export default function NetworkExplorer() {
     const graph = subgraphs[selected];
     const position = new Map(graph.nodes.map((n) => [n.id, n]));
 
-    // Edge digambar sebagai satu trace dengan null sebagai pemisah segmen —
+    // Edge digambar sebagai satu trace dengan null sebagai pemisah segmen -
     // jauh lebih ringan daripada satu trace per edge.
     const edgeX: (number | null)[] = [];
     const edgeY: (number | null)[] = [];
@@ -78,6 +81,7 @@ export default function NetworkExplorer() {
     ];
   }, [subgraphs, selected]);
 
+  if (error) return <LoadError message={error} />;
   if (!subgraphs) return <p className="py-12 text-center text-sm text-muted">memuat…</p>;
 
   const graph = subgraphs[selected];
@@ -155,7 +159,7 @@ export default function NetworkExplorer() {
       <Callout>
         <strong className="text-bright">Yang membuat klaster ini menarik.</strong> Transaksi yang
         berbagi kartu atau device membentuk kelompok, dan pada sebagian kelompok hampir seluruh
-        anggotanya fraud — pola yang mendorong dibangunnya fitur graph. Tetapi ablation menunjukkan
+        anggotanya fraud - pola yang mendorong dibangunnya fitur graph. Tetapi ablation menunjukkan
         pola ini <em>tidak</em> bertahan ke periode berikutnya: klaster baru terus bermunculan, dan
         dua pertiga transaksi di periode uji tidak punya tetangga berlabel apa pun. Visualisasi yang
         meyakinkan tidak sama dengan fitur yang berguna.

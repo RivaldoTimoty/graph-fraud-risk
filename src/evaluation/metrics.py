@@ -1,6 +1,6 @@
 """Metrik evaluasi: AUC, KS, PR-AUC, lift@k.
 
-KS wajib ada karena ini standar industri credit scoring — mengukur pemisahan
+KS wajib ada karena ini standar industri credit scoring - mengukur pemisahan
 maksimum antara distribusi kumulatif good dan bad.
 """
 
@@ -23,7 +23,7 @@ def ks_statistic(y_true: np.ndarray, y_score: np.ndarray) -> float:
 
 
 def lift_at_k(y_true: np.ndarray, y_score: np.ndarray, k: float) -> dict[str, float]:
-    """Performa pada k fraksi teratas — pertanyaan operasional tim risk.
+    """Performa pada k fraksi teratas - pertanyaan operasional tim risk.
 
     "Kalau kita review 1% transaksi berskor tertinggi, berapa persen fraud yang
     tertangkap?" -> `recall`. `lift` adalah berapa kali lebih baik dari memilih

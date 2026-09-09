@@ -1,6 +1,6 @@
 """Analisis SHAP: seberapa besar kontribusi fitur graph dibanding C dan lainnya.
 
-Dihitung pada subsample VALIDATION, bukan test — keputusan menggugurkan fitur
+Dihitung pada subsample VALIDATION, bukan test - keputusan menggugurkan fitur
 harus diambil sebelum test set dibuka, supaya test tidak berubah menjadi alat
 seleksi fitur.
 """
@@ -83,7 +83,7 @@ def plot_summary(values: np.ndarray, sample: pd.DataFrame, name: str, top_n: int
             label.set_color("#bf616a")
             label.set_fontweight("bold")
 
-    plt.title(f"SHAP top {top_n} — {name} (merah = fitur graph)", fontsize=11)
+    plt.title(f"SHAP top {top_n} - {name} (merah = fitur graph)", fontsize=11)
     plt.tight_layout()
     path = FIGURE_DIR / f"05_shap_summary_{name}.png"
     plt.savefig(path, dpi=130, bbox_inches="tight")

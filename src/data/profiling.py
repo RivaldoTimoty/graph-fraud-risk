@@ -51,8 +51,8 @@ def coverage_across_periods(
     rendah, statistik entitas dari periode training tidak akan berlaku di OOT dan
     fitur graph berbasis label akan lemah di sana.
 
-    Dilaporkan dua cara: `pct_rows_covered` (bobot volume — dampak praktis) dan
-    `pct_values_covered` (bobot entitas unik — seberapa banyak entitas baru muncul).
+    Dilaporkan dua cara: `pct_rows_covered` (bobot volume - dampak praktis) dan
+    `pct_values_covered` (bobot entitas unik - seberapa banyak entitas baru muncul).
     """
     rows = []
     for col in columns:
@@ -85,7 +85,7 @@ def weekly_fraud_rate(df: pd.DataFrame, week_col: str = "week", target: str = "i
 def missing_pattern_groups(df: pd.DataFrame, columns: list[str], min_group: int = 2):
     """Kelompokkan kolom yang punya pola missing identik.
 
-    Banyak kolom Vxxx punya pola missing yang persis sama — petunjuk bahwa mereka
+    Banyak kolom Vxxx punya pola missing yang persis sama - petunjuk bahwa mereka
     berasal dari satu sumber/blok fitur Vesta, sehingga bisa diperlakukan sebagai
     satu unit saat seleksi fitur.
     """

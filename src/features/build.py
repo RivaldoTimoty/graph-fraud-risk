@@ -27,7 +27,7 @@ BLOCK_PREFIX = {"V": "V", "id": "id_"}
 def _resolve_raw_blocks(cfg: dict, available: list[str]) -> dict[str, list[str]]:
     """`null` di config berarti ambil semua kolom dengan prefiks blok tersebut.
 
-    Kolom yang sudah masuk `label_encode` dikeluarkan dari blok mentah — 15 kolom
+    Kolom yang sudah masuk `label_encode` dikeluarkan dari blok mentah - 15 kolom
     id_* bertipe string dan hanya boleh masuk matriks dalam bentuk ter-encode.
     """
     encoded = set(cfg["label_encode"])

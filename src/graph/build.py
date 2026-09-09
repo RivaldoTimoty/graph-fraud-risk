@@ -5,7 +5,7 @@ transaksi i memiliki nilai atribut j. Dua transaksi "bertetangga" bila berbagi
 minimal satu nilai atribut, yaitu lewat jalur 2-hop di A.
 
 ATURAN YANG TIDAK BOLEH DILANGGAR: adjacency transaksi-ke-transaksi (A @ A.T)
-TIDAK PERNAH dimaterialisasi. Untuk data ini ukurannya ~89,5 miliar nnz — akan
+TIDAK PERNAH dimaterialisasi. Untuk data ini ukurannya ~89,5 miliar nnz - akan
 kehabisan memori. Semua agregasi tetangga dihitung sebagai A @ (A.T @ v), yang
 biayanya linier terhadap nnz(A) = 2,08 juta.
 

@@ -14,7 +14,7 @@ PERINGATAN INTERPRETASI:
   siklikal, tapi jangan diberi label "dini hari"/"jam kerja" di laporan.
 
 Split dipotong pada batas HARI, bukan persentil baris, sehingga tidak ada hari
-yang terbelah antar split — hari terbelah akan membocorkan agregasi harian pada
+yang terbelah antar split - hari terbelah akan membocorkan agregasi harian pada
 fitur graph di Fase 3.
 """
 
@@ -36,7 +36,7 @@ DAY_ORIGIN = 86400  # TransactionDT minimum; hari ke-0 dimulai di sini
 def add_time_features(df: pd.DataFrame, time_col: str = "TransactionDT") -> pd.DataFrame:
     """Turunkan day/week/hour/dayofweek dari TransactionDT.
 
-    Semua fitur di sini tersedia pada saat transaksi terjadi — tidak ada risiko
+    Semua fitur di sini tersedia pada saat transaksi terjadi - tidak ada risiko
     leakage. `dayofweek` relatif terhadap hari ke-0, bukan kalender absolut.
     """
     out = df.copy()

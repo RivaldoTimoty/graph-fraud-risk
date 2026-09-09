@@ -27,7 +27,7 @@ def _save(fig: plt.Figure, name: str) -> Path:
 
 
 def plot_score_distribution(scores: np.ndarray, y_true: np.ndarray) -> Path:
-    """Distribusi skor fraud vs non-fraud — pemisahan yang dilihat tim risk."""
+    """Distribusi skor fraud vs non-fraud - pemisahan yang dilihat tim risk."""
     fig, ax = plt.subplots(figsize=(10, 4.5))
     bins = np.linspace(scores.min(), scores.max(), 60)
     ax.hist(
@@ -136,7 +136,7 @@ def plot_reliability(
     ax.set_ylim(0, limit)
     ax.set_xlabel("probabilitas prediksi rata-rata")
     ax.set_ylabel("fraud rate aktual")
-    ax.set_title("Reliability curve — test out-of-time")
+    ax.set_title("Reliability curve - test out-of-time")
     ax.legend()
     return _save(fig, "09_reliability_curve.png")
 
@@ -150,7 +150,7 @@ def plot_psi(detail: pd.DataFrame, psi: float, csi: pd.DataFrame, top_n: int = 1
     ax1.bar(x + 0.2, detail["actual_pct"], 0.4, label="test", color=FRAUD_COLOR)
     ax1.set_xlabel("bin skor (dari kuantil train)")
     ax1.set_ylabel("proporsi populasi")
-    ax1.set_title(f"Stabilitas distribusi skor — PSI {psi:.4f}")
+    ax1.set_title(f"Stabilitas distribusi skor - PSI {psi:.4f}")
     ax1.legend()
 
     top = csi.head(top_n).iloc[::-1]

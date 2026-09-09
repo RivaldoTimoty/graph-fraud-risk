@@ -1,11 +1,11 @@
-# Deteksi Fraud Transaksi — Ringkasan Eksekutif
+# Deteksi Fraud Transaksi - Ringkasan Eksekutif
 
 ---
 
 ## Masalah
 
 Dari setiap 100 transaksi yang masuk, sekitar 3–4 adalah penipuan. Pada volume
-yang dianalisis — 89.000 transaksi dalam satu bulan — kerugian yang lolos tanpa
+yang dianalisis - 89.000 transaksi dalam satu bulan - kerugian yang lolos tanpa
 sistem penyaringan mencapai **$477.000 per bulan**.
 
 Tim risk tidak mungkin meninjau semua transaksi secara manual. Pertanyaannya
@@ -22,7 +22,7 @@ skor terendah ke atas, sesuai kapasitas yang tersedia.
 
 Sistem dibangun dan diuji dengan satu aturan ketat: **model hanya boleh belajar
 dari masa lalu, lalu diuji pada periode yang belum pernah dilihatnya.** Ini
-mencerminkan kondisi nyata — saat menilai transaksi hari ini, kita tidak tahu apa
+mencerminkan kondisi nyata - saat menilai transaksi hari ini, kita tidak tahu apa
 yang akan terjadi bulan depan.
 
 ---
@@ -32,7 +32,7 @@ yang akan terjadi bulan depan.
 **Jika tim meninjau 10% transaksi berskor terendah, 69 dari setiap 100 penipuan
 akan tertangkap.**
 
-Kelompok 10% terburuk itu punya tingkat penipuan **24%** — tujuh kali lebih tinggi
+Kelompok 10% terburuk itu punya tingkat penipuan **24%** - tujuh kali lebih tinggi
 daripada rata-rata. Sebaliknya, kelompok 10% teraman hanya 0,18%, yaitu **134 kali
 lebih aman**. Tim tidak perlu lagi meninjau transaksi secara acak.
 
@@ -48,7 +48,7 @@ lebih aman**. Tim tidak perlu lagi meninjau transaksi secara acak.
 ## Estimasi dampak finansial
 
 Dampaknya bergantung pada satu angka yang hanya bisa ditentukan oleh bisnis:
-**berapa biaya meninjau satu transaksi** — mencakup waktu staf dan ketidaknyamanan
+**berapa biaya meninjau satu transaksi** - mencakup waktu staf dan ketidaknyamanan
 pelanggan yang transaksinya tertunda.
 
 | Biaya per review | Kapasitas optimal | Penipuan tertangkap | Penghematan/bulan |
@@ -58,7 +58,7 @@ pelanggan yang transaksinya tertunda.
 | $10 | 12% transaksi | 74% | $255.000 |
 | $25 | 7% transaksi | 63% | $172.000 |
 
-**Pada asumsi $5 per review, sistem menghemat sekitar $300.000 per bulan** —
+**Pada asumsi $5 per review, sistem menghemat sekitar $300.000 per bulan** -
 setara 65% dari kerugian yang sebelumnya lolos begitu saja.
 
 Yang perlu diperhatikan: kapasitas review optimal bergeser **lima kali lipat**
@@ -78,7 +78,7 @@ otomatis berarti menolak tiga pelanggan jujur untuk setiap satu penipu. Sistem i
 alat penentu prioritas, bukan pengambil keputusan.
 
 **Pola penipuan berubah seiring waktu.**
-Dalam enam bulan data, tingkat penipuan bergerak antara 2% dan 5% — selisih dua
+Dalam enam bulan data, tingkat penipuan bergerak antara 2% dan 5% - selisih dua
 setengah kali lipat. Sistem perlu dilatih ulang secara berkala, dan performanya
 harus dipantau bulanan.
 
@@ -100,7 +100,7 @@ harus dilakukan.
    benar-benar tertangkap selama tiga bulan pertama.
 
 2. **Tetapkan biaya review yang sebenarnya.** Angka itu menentukan kapasitas
-   optimal, dan hanya bisa ditentukan dari data operasional internal — bukan dari
+   optimal, dan hanya bisa ditentukan dari data operasional internal - bukan dari
    analisis ini.
 
 3. **Siapkan pemantauan bulanan** atas tingkat penipuan aktual dan akurasi
